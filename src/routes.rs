@@ -27,7 +27,7 @@ pub async fn create_note(pool: web::Data<SqlitePool>, data: web::Json<NewNote>) 
 }
 
 #[get("/notes/{note_id}")]
-pub async fn read_note(pool: web::Data<SqlitePool>, path: web::Path<i64>)->Result<HttpResponse, Error>{
+pub async fn read_note(pool: web::Data<SqlitePool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let note_id = path.into_inner();
     Note::get(pool, note_id)
        .await
@@ -45,7 +45,7 @@ pub async fn update_note(pool: web::Data<SqlitePool>, data: web::Json<Note>) -> 
 }
 
 #[delete("/notes/{note_id}")]
-pub async fn delete_note(pool: web::Data<SqlitePool>, path: web::Path<i64>)->Result<HttpResponse, Error>{
+pub async fn delete_note(pool: web::Data<SqlitePool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let note_id = path.into_inner();
     Note::delete(pool, note_id)
        .await

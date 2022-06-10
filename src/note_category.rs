@@ -5,9 +5,9 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, FromRow, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NoteCategory{
-    pub id: i64,
-    pub note_id: i64,
-    pub category_id: i64,
+    pub id: i32,
+    pub note_id: i32,
+    pub category_id: i32,
 }
 
 impl NoteCategory{
@@ -18,14 +18,14 @@ impl NoteCategory{
         Ok(notes_categories)
     }
 
-    pub async fn get(pool: web::Data<SqlitePool>, id: i64) -> Result<NoteCategory, Error>{
+    pub async fn get(pool: web::Data<SqlitePool>, id: i32) -> Result<NoteCategory, Error>{
         let note_category = query_as!(NoteCategory, r#"SELECT id, note_id, category_id FROM notes_categories WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(note_category)
     }
 
-    pub async fn new(pool: web::Data<SqlitePool>, note_id: i64, category_id: i64) -> Result<NoteCategory, Error>{
+    pub async fn new(pool: web::Data<SqlitePool>, note_id: i32, category_id: i32) -> Result<NoteCategory, Error>{
         let id = query("INSERT INTO notes_categories (note_id, category_id) VALUES (?, ?);")
             .bind(note_id)
             .bind(category_id)

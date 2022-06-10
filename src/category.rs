@@ -4,7 +4,7 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
 pub struct Category{
-    pub id: i64,
+    pub id: i32,
     pub name: String,
 }
 
@@ -21,7 +21,7 @@ impl Category{
         Ok(categories)
     }
 
-    pub async fn get(pool: web::Data<SqlitePool>, id: i64) -> Result<Category, Error>{
+    pub async fn get(pool: web::Data<SqlitePool>, id: i32) -> Result<Category, Error>{
         let category = query_as!(Category, r#"SELECT id, name FROM categories WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
@@ -46,7 +46,7 @@ impl Category{
         Self::get(pool, category.id).await
     }
 
-    pub async fn delete(pool: web::Data<SqlitePool>, id: i64) -> Result<String, Error>{
+    pub async fn delete(pool: web::Data<SqlitePool>, id: i32) -> Result<String, Error>{
         query("DELETE FROM categories WHERE id = ?;")
             .bind(id)
             .execute(pool.get_ref())

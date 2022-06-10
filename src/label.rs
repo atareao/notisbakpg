@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Debug, FromRow, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Label{
-    pub id: i64,
+    pub id: i32,
     pub name: String,
 }
 
@@ -23,7 +23,7 @@ impl Label{
         Ok(labels)
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i64) -> Result<Label, Error>{
+    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Label, Error>{
         let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
@@ -48,7 +48,7 @@ impl Label{
         Self::get(pool, label.id).await
     }
 
-    pub async fn delete(pool: web::Data<PgPool>, id: i64) -> Result<String, Error>{
+    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<String, Error>{
         query("DELETE FROM labels WHERE id = ?;")
             .bind(id)
             .execute(pool.get_ref())

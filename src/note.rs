@@ -9,7 +9,7 @@ use utoipa::Component;
 
 #[derive(Debug, FromRow, Serialize, Deserialize, Component)]
 pub struct Note{
-    pub id: i64,
+    pub id: i32,
     pub title: String,
     pub body: String,
     pub created_at: NaiveDateTime,
@@ -32,10 +32,10 @@ mod note_api{
             (status = 404, description = "Note was not found")
         ),
         params(
-            ("id" = i64, path, description = "Note database id to get Note for"),
+            ("id" = i32, path, description = "Note database id to get Note for"),
         )
     )]
-    async fn get_note_by_id(note_id: i64) -> Note {
+    async fn get_note_by_id(note_id: i32) -> Note {
         let current = chrono::Utc::now().naive_utc();
         Note {
             id: note_id,
@@ -56,7 +56,7 @@ impl Note{
         Ok(notes)
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i64) -> Result<Note, Error>{
+    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
         let note = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
@@ -67,14 +67,16 @@ impl Note{
         let body = body_option.unwrap_or("");
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
-        let id = query("INSERT INTO notes (title, body, created_at, updated_at) VALUES (?, ?, ?, ?);")
+        query("INSERT INTO notes (title, body, created_at, updated_at) VALUES (?, ?, ?, ?);")
             .bind(title)
             .bind(body)
             .bind(created_at)
             .bind(updated_at)
             .execute(pool.get_ref())
-            .await?
-            .last_insert_rowid();
+            .await?;
+        let id = query("SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes', 'id'))")
+            .execute(pool.get_ref())
+            .await?;
         Self::get(pool, id).await
     }
 
@@ -90,7 +92,7 @@ impl Note{
         Self::get(pool, note.id).await
     }
 
-    pub async fn delete(pool: web::Data<PgPool>, id: i64) -> Result<String, Error>{
+    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<String, Error>{
         query("DELETE FROM notes WHERE id = ?;")
             .bind(id)
             .execute(pool.get_ref())
@@ -98,7 +100,7 @@ impl Note{
         Ok("Note deleted".to_string())
     }
 
-    pub async fn add_label(self, pool: web::Data<SqlitePool>, label_id: i64) -> Result<SqliteQueryResult, Error>{
+    pub async fn add_label(self, pool: web::Data<SqlitePool>, label_id: i32) -> Result<SqliteQueryResult, Error>{
         query("INSERT INTO notes_labels (note_id, label_id) VALUES (?, ?);")
             .bind(self.id)
             .bind(label_id)
@@ -106,7 +108,7 @@ impl Note{
             .await
     }
 
-    pub async fn delete_label(self, pool: web::Data<SqlitePool>, label_id: i64) -> Result<SqliteQueryResult, Error>{
+    pub async fn delete_label(self, pool: web::Data<SqlitePool>, label_id: i32) -> Result<SqliteQueryResult, Error>{
         query("DELETE FROM notes_labels WHERE node_id = ?, label_id = ?")
             .bind(self.id)
             .bind(label_id)
@@ -121,7 +123,7 @@ impl Note{
         Ok(labels)
     }
 
-    pub async fn get_label(self, pool: web::Data<SqlitePool>, label_id: i64) -> Result<Label, Error>{
+    pub async fn get_label(self, pool: web::Data<SqlitePool>, label_id: i32) -> Result<Label, Error>{
         let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id = ?"#, self.id)
             .fetch_one(pool.get_ref())
             .await?;
