@@ -1,5 +1,5 @@
 use actix_web::web;
-use sqlx::{sqlite::SqlitePool, query, query_as, FromRow, Error};
+use sqlx::{query, query_as, FromRow, Error};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]

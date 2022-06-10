@@ -1,5 +1,5 @@
 use actix_web::web;
-use sqlx::{sqlite::SqlitePool, query, query_as, FromRow, Error};
+use sqlx::{postgres::PgPool, query, query_as, FromRow, Error};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
@@ -16,21 +16,21 @@ pub struct NewLabel{
 }
 
 impl Label{
-    pub async fn all(pool: web::Data<SqlitePool>) -> Result<Vec<Label>, Error>{
+    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Label>, Error>{
         let labels = query_as!(Label, r#"SELECT id, name FROM labels"#)
             .fetch_all(pool.get_ref())
             .await?;
         Ok(labels)
     }
 
-    pub async fn get(pool: web::Data<SqlitePool>, id: i64) -> Result<Label, Error>{
+    pub async fn get(pool: web::Data<PgPool>, id: i64) -> Result<Label, Error>{
         let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(label)
     }
 
-    pub async fn new(pool: web::Data<SqlitePool>, name: &str) -> Result<Label, Error>{
+    pub async fn new(pool: web::Data<PgPool>, name: &str) -> Result<Label, Error>{
         let id = query("INSERT INTO labels (name) VALUES (?);")
             .bind(name)
             .execute(pool.get_ref())
@@ -39,7 +39,7 @@ impl Label{
         Self::get(pool, id).await
     }
 
-    pub async fn update(pool: web::Data<SqlitePool>, label: Label) -> Result<Label, Error>{
+    pub async fn update(pool: web::Data<PgPool>, label: Label) -> Result<Label, Error>{
         query("UPDATE labels SET name=? WHERE id=?;")
             .bind(label.name)
             .bind(label.id)
@@ -48,7 +48,7 @@ impl Label{
         Self::get(pool, label.id).await
     }
 
-    pub async fn delete(pool: web::Data<SqlitePool>, id: i64) -> Result<String, Error>{
+    pub async fn delete(pool: web::Data<PgPool>, id: i64) -> Result<String, Error>{
         query("DELETE FROM labels WHERE id = ?;")
             .bind(id)
             .execute(pool.get_ref())

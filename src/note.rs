@@ -1,6 +1,6 @@
 use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
-use sqlx::{sqlite::{SqlitePool, SqliteQueryResult}, query, query_as, FromRow, Error};
+use sqlx::{query, query_as, FromRow, Error, PgPool};
 use serde::{Serialize, Deserialize};
 use crate::label::Label;
 use utoipa::Component;
@@ -48,7 +48,7 @@ mod note_api{
 }
 
 impl Note{
-    pub async fn all(pool: web::Data<SqlitePool>) -> Result<Vec<Note>, Error>{
+    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
         println!("Get all");
         let notes = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
             .fetch_all(pool.get_ref())
@@ -56,14 +56,14 @@ impl Note{
         Ok(notes)
     }
 
-    pub async fn get(pool: web::Data<SqlitePool>, id: i64) -> Result<Note, Error>{
+    pub async fn get(pool: web::Data<PgPool>, id: i64) -> Result<Note, Error>{
         let note = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(note)
     }
 
-    pub async fn new(pool: web::Data<SqlitePool>, title: &str, body_option: Option<&str>) -> Result<Note, Error>{
+    pub async fn new(pool: web::Data<PgPool>, title: &str, body_option: Option<&str>) -> Result<Note, Error>{
         let body = body_option.unwrap_or("");
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
@@ -78,7 +78,7 @@ impl Note{
         Self::get(pool, id).await
     }
 
-    pub async fn update(pool: web::Data<SqlitePool>, note: Note) -> Result<Note, Error>{
+    pub async fn update(pool: web::Data<PgPool>, note: Note) -> Result<Note, Error>{
         let updated_at = Utc::now().naive_utc();
         query("UPDATE notes SET title=?, body=?, updated_at=? WHERE id=?;")
             .bind(note.title)
@@ -90,7 +90,7 @@ impl Note{
         Self::get(pool, note.id).await
     }
 
-    pub async fn delete(pool: web::Data<SqlitePool>, id: i64) -> Result<String, Error>{
+    pub async fn delete(pool: web::Data<PgPool>, id: i64) -> Result<String, Error>{
         query("DELETE FROM notes WHERE id = ?;")
             .bind(id)
             .execute(pool.get_ref())

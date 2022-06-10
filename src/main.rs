@@ -5,7 +5,7 @@ mod note_label;
 mod note_category;
 mod routes;
 
-use sqlx::sqlite::SqlitePoolOptions;
+use sqlx::postgres::PgPoolOptions;
 use actix_web::{App, HttpServer, web::Data};
 use dotenv::dotenv;
 use std::env;
@@ -17,7 +17,7 @@ use routes::{root,
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("Database not found");
-    let pool = SqlitePoolOptions::new()
+    let pool = PgPoolOptions::new()
         .max_connections(4)
         .connect(&db_url)
         .await
