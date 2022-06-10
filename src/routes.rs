@@ -1,6 +1,6 @@
 use actix_web::{get, post, put, delete, web, error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse, http::StatusCode};
 use anyhow::Result;
-use sqlx::SqlitePool;
+use sqlx::PgPool;
 use crate::note::{Note, NewNote};
 use crate::category::{Category, NewCategory};
 use crate::label::{Label, NewLabel};
@@ -11,7 +11,7 @@ pub async fn root() -> Result<HttpResponse, Error>{
 }
 
 #[get("/notes")]
-pub async fn all_notes(pool: web::Data<SqlitePool>)->Result<HttpResponse, Error>{
+pub async fn all_notes(pool: web::Data<PgPool>)->Result<HttpResponse, Error>{
     Note::all(pool)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
@@ -19,7 +19,7 @@ pub async fn all_notes(pool: web::Data<SqlitePool>)->Result<HttpResponse, Error>
 }
 
 #[post("/notes")]
-pub async fn create_note(pool: web::Data<SqlitePool>, data: web::Json<NewNote>) -> Result<HttpResponse, Error>{
+pub async fn create_note(pool: web::Data<PgPool>, data: web::Json<NewNote>) -> Result<HttpResponse, Error>{
     Note::new(pool, &data.into_inner().title, None)
        .await
        .map(|note| HttpResponse::Ok().json(note))
@@ -27,7 +27,7 @@ pub async fn create_note(pool: web::Data<SqlitePool>, data: web::Json<NewNote>) 
 }
 
 #[get("/notes/{note_id}")]
-pub async fn read_note(pool: web::Data<SqlitePool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+pub async fn read_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let note_id = path.into_inner();
     Note::get(pool, note_id)
        .await
@@ -36,7 +36,7 @@ pub async fn read_note(pool: web::Data<SqlitePool>, path: web::Path<i32>)->Resul
 }
 
 #[put("/notes")]
-pub async fn update_note(pool: web::Data<SqlitePool>, data: web::Json<Note>) -> Result<HttpResponse, Error>{
+pub async fn update_note(pool: web::Data<PgPool>, data: web::Json<Note>) -> Result<HttpResponse, Error>{
     let note = data.into_inner();
     Note::update(pool, note)
        .await
@@ -45,7 +45,7 @@ pub async fn update_note(pool: web::Data<SqlitePool>, data: web::Json<Note>) -> 
 }
 
 #[delete("/notes/{note_id}")]
-pub async fn delete_note(pool: web::Data<SqlitePool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+pub async fn delete_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let note_id = path.into_inner();
     Note::delete(pool, note_id)
        .await
@@ -54,7 +54,7 @@ pub async fn delete_note(pool: web::Data<SqlitePool>, path: web::Path<i32>)->Res
 }
 
 #[get("/categories")]
-pub async fn all_categories(pool: web::Data<SqlitePool>) -> Result<HttpResponse, Error>{
+pub async fn all_categories(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
     Category::all(pool)
        .await
        .map(|some_categories| HttpResponse::Ok().json(some_categories))
@@ -62,7 +62,7 @@ pub async fn all_categories(pool: web::Data<SqlitePool>) -> Result<HttpResponse,
 }
 
 #[post("/categories")]
-pub async fn new_category(pool: web::Data<SqlitePool>, data: web::Json<NewCategory>) -> Result<HttpResponse, Error>{
+pub async fn new_category(pool: web::Data<PgPool>, data: web::Json<NewCategory>) -> Result<HttpResponse, Error>{
     Category::new(pool, &data.into_inner().name)
        .await
        .map(|category| HttpResponse::Ok().json(category))
@@ -70,7 +70,7 @@ pub async fn new_category(pool: web::Data<SqlitePool>, data: web::Json<NewCatego
 }
 
 #[get("/labels")]
-pub async fn all_labels(pool: web::Data<SqlitePool>) -> Result<HttpResponse, Error>{
+pub async fn all_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
     Label::all(pool)
        .await
        .map(|some_labels| HttpResponse::Ok().json(some_labels))
@@ -78,7 +78,7 @@ pub async fn all_labels(pool: web::Data<SqlitePool>) -> Result<HttpResponse, Err
 }
 
 #[post("/labels")]
-pub async fn new_label(pool: web::Data<SqlitePool>, data: web::Json<NewLabel>) -> Result<HttpResponse, Error>{
+pub async fn new_label(pool: web::Data<PgPool>, data: web::Json<NewLabel>) -> Result<HttpResponse, Error>{
     Label::new(pool, &data.into_inner().name)
        .await
        .map(|label| HttpResponse::Ok().json(label))

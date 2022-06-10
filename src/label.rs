@@ -1,5 +1,5 @@
 use actix_web::web;
-use sqlx::{postgres::PgPool, query, query_as, FromRow, Error};
+use sqlx::{query, query_as, FromRow, Error, postgres::PgPool};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
@@ -30,13 +30,19 @@ impl Label{
         Ok(label)
     }
 
+    pub async fn get_last_inserted(pool: web::Data<PgPool>) -> Result<Label, Error>{
+        let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('labels', 'id')))"#)
+            .fetch_one(pool.get_ref())
+            .await?;
+        Ok(label)
+    }
+
     pub async fn new(pool: web::Data<PgPool>, name: &str) -> Result<Label, Error>{
-        let id = query("INSERT INTO labels (name) VALUES (?);")
+        query("INSERT INTO labels (name) VALUES (?);")
             .bind(name)
             .execute(pool.get_ref())
-            .await?
-            .last_insert_rowid();
-        Self::get(pool, id).await
+            .await;
+        Self::get_last_inserted(pool).await
     }
 
     pub async fn update(pool: web::Data<PgPool>, label: Label) -> Result<Label, Error>{

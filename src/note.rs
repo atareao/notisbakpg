@@ -1,6 +1,6 @@
 use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
-use sqlx::{query, query_as, FromRow, Error, PgPool};
+use sqlx::{query, query_as, FromRow, Error, postgres::{PgPool, PgQueryResult}};
 use serde::{Serialize, Deserialize};
 use crate::label::Label;
 use utoipa::Component;
@@ -63,6 +63,13 @@ impl Note{
         Ok(note)
     }
 
+    pub async fn get_last_inserted(pool: web::Data<PgPool>) -> Result<Note, Error>{
+        let note = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes', 'id')))"#)
+            .fetch_one(pool.get_ref())
+            .await?;
+        Ok(note)
+    }
+
     pub async fn new(pool: web::Data<PgPool>, title: &str, body_option: Option<&str>) -> Result<Note, Error>{
         let body = body_option.unwrap_or("");
         let created_at = Utc::now().naive_utc();
@@ -74,10 +81,7 @@ impl Note{
             .bind(updated_at)
             .execute(pool.get_ref())
             .await?;
-        let id = query("SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes', 'id'))")
-            .execute(pool.get_ref())
-            .await?;
-        Self::get(pool, id).await
+        Self::get_last_inserted(pool).await
     }
 
     pub async fn update(pool: web::Data<PgPool>, note: Note) -> Result<Note, Error>{
@@ -100,7 +104,7 @@ impl Note{
         Ok("Note deleted".to_string())
     }
 
-    pub async fn add_label(self, pool: web::Data<SqlitePool>, label_id: i32) -> Result<SqliteQueryResult, Error>{
+    pub async fn add_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
         query("INSERT INTO notes_labels (note_id, label_id) VALUES (?, ?);")
             .bind(self.id)
             .bind(label_id)
@@ -108,7 +112,7 @@ impl Note{
             .await
     }
 
-    pub async fn delete_label(self, pool: web::Data<SqlitePool>, label_id: i32) -> Result<SqliteQueryResult, Error>{
+    pub async fn delete_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
         query("DELETE FROM notes_labels WHERE node_id = ?, label_id = ?")
             .bind(self.id)
             .bind(label_id)
@@ -116,15 +120,15 @@ impl Note{
             .await
     }
 
-    pub async fn get_labels(self, pool: web::Data<SqlitePool>) -> Result<Vec<Label>, Error>{
-        let labels = query_as!(Label, r#"SELECT l.id, l.name FROM labels l INNER JOIN notes_labels nl ON l.id = nl.label_id AND nl.note_id = ?"#, self.id)
+    pub async fn get_labels(self, pool: web::Data<PgPool>) -> Result<Vec<Label>, Error>{
+        let labels = query_as!(Label, r#"SELECT l.id, l.name FROM labels l INNER JOIN notes_labels nl ON l.id = nl.label_id AND nl.note_id = $1"#, self.id)
             .fetch_all(pool.get_ref())
             .await?;
         Ok(labels)
     }
 
-    pub async fn get_label(self, pool: web::Data<SqlitePool>, label_id: i32) -> Result<Label, Error>{
-        let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id = ?"#, self.id)
+    pub async fn get_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<Label, Error>{
+        let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id = $1"#, label_id)
             .fetch_one(pool.get_ref())
             .await?;
         Ok(label)
