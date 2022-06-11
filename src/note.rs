@@ -49,7 +49,6 @@ mod note_api{
 
 impl Note{
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
-        println!("Get all");
         let notes = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
             .fetch_all(pool.get_ref())
             .await?;
@@ -63,25 +62,19 @@ impl Note{
         Ok(note)
     }
 
-    pub async fn get_last_inserted(pool: web::Data<PgPool>) -> Result<Note, Error>{
-        let note = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes', 'id')))"#)
-            .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note)
-    }
-
     pub async fn new(pool: web::Data<PgPool>, title: &str, body_option: Option<&str>) -> Result<Note, Error>{
         let body = body_option.unwrap_or("");
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
-        query("INSERT INTO notes (title, body, created_at, updated_at) VALUES (?, ?, ?, ?);")
-            .bind(title)
-            .bind(body)
-            .bind(created_at)
-            .bind(updated_at)
-            .execute(pool.get_ref())
+        let note = query_as!(Note,
+                             r#"INSERT INTO notes (title, body, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, title, body, created_at, updated_at;"#,
+                             title,
+                             body,
+                             created_at,
+                             updated_at)
+            .fetch_one(pool.get_ref())
             .await?;
-        Self::get_last_inserted(pool).await
+        Ok(note)
     }
 
     pub async fn update(pool: web::Data<PgPool>, note: Note) -> Result<Note, Error>{
