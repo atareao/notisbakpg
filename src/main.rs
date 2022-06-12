@@ -20,6 +20,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("Database not found");
 
+    /*
     #[derive(OpenApi)]
     #[openapi(
         handlers(
@@ -31,6 +32,7 @@ async fn main() -> std::io::Result<()> {
         ),
     )]
     struct ApiDoc;
+    */
 
     let pool = PgPoolOptions::new()
         .max_connections(4)
@@ -50,10 +52,12 @@ async fn main() -> std::io::Result<()> {
             .service(new_category)
             .service(all_labels)
             .service(new_label)
+            /*
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-doc/openapi.json", ApiDoc::openapi()),
                 )
+                */
     })
     .bind("127.0.0.1:8080")
     .unwrap()

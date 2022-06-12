@@ -26,6 +26,15 @@ pub async fn create_note(pool: web::Data<PgPool>, data: web::Json<NewNote>) -> R
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
+#[get("/notes/{note_id}/labels/")]
+pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+    let note_id = path.into_inner();
+    Label::get_labels_for_note(pool, note_id)
+       .await
+       .map(|labels| HttpResponse::Ok().json(labels))
+       .map_err(|_| ErrorNotFound("Not found"))
+}
+
 #[get("/notes/{note_id}")]
 pub async fn read_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let note_id = path.into_inner();
