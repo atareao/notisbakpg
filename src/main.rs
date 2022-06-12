@@ -4,6 +4,7 @@ mod category;
 mod note_label;
 mod note_category;
 mod routes;
+mod label_api;
 
 use sqlx::postgres::PgPoolOptions;
 use actix_web::{App, HttpServer, web::Data};
@@ -11,6 +12,7 @@ use dotenv::dotenv;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
 use std::env;
+use label::Label;
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
              all_categories, new_category, all_labels, new_label};
@@ -20,19 +22,18 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("Database not found");
 
-    /*
     #[derive(OpenApi)]
     #[openapi(
         handlers(
-            note::all
+            label_api::get_label_by_id
         ),
-        components(Todo, TodoUpdateRequest, ErrorResponse),
+        components(Label),
         tags(
             (name = "todo", description = "Todo management endpoints.")
         ),
     )]
     struct ApiDoc;
-    */
+    println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
 
     let pool = PgPoolOptions::new()
         .max_connections(4)

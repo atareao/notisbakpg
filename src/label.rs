@@ -1,8 +1,9 @@
 use actix_web::web;
 use sqlx::{query_as, FromRow, Error, PgPool};
 use serde::{Serialize, Deserialize};
+use utoipa::Component;
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, Component)]
 pub struct Label{
     pub id: i32,
     pub name: String,
