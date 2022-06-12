@@ -1,13 +1,30 @@
-use actix_web::{get, post, put, delete, web, error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse, http::StatusCode};
+use actix_web::{get, post, put, delete, web,
+                error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse,
+                http::StatusCode, test::{self, TestRequest}, App};
 use anyhow::Result;
 use sqlx::PgPool;
 use crate::note::{Note, NewNote, UpdateNote};
 use crate::category::{Category, NewCategory};
 use crate::label::{Label, NewLabel};
+use bytes::Bytes;
 
 #[get("/")]
 pub async fn root() -> Result<HttpResponse, Error>{
     Ok(HttpResponse::build(StatusCode::OK).body("Hello world, Rust!"))
+}
+
+#[actix_web::test]
+async fn test_index() {
+    let app = test::init_service(
+        App::new().service(root)
+    ).await;
+
+    let req = test::TestRequest::get()
+        .uri("/")
+        .to_request();
+
+    let result = test::call_and_read_body(&app, req).await;
+    assert_eq!(result, Bytes::from_static(b"Hello world, Rust!"));
 }
 
 #[get("/notes")]

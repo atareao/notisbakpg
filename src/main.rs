@@ -41,6 +41,10 @@ async fn main() -> std::io::Result<()> {
         .connect(&db_url)
         .await
         .expect("pool failed");
+
+    // Do migration
+    sqlx::migrate!().run(&pool).await.expect("Can not migrate");
+
     HttpServer::new(move ||{
         App::new()
             .app_data(Data::new(pool.clone()))
