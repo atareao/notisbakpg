@@ -2,7 +2,7 @@ use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
 use sqlx::{query, query_as, FromRow, Error, postgres::{PgPool, PgQueryResult}};
 use serde::{Serialize, Deserialize};
-use crate::label::Label;
+use crate::{label::Label, category::Category};
 use utoipa::Component;
 
 //https://github.com/juhaku/utoipa
@@ -101,7 +101,7 @@ impl Note{
             .await
     }
 
-    pub async fn add_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
+    pub async fn set_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
         query("INSERT INTO notes_labels (note_id, label_id) VALUES (?, ?);")
             .bind(self.id)
             .bind(label_id)
@@ -109,7 +109,7 @@ impl Note{
             .await
     }
 
-    pub async fn delete_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
+    pub async fn unset_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
         query("DELETE FROM notes_labels WHERE node_id = ?, label_id = ?")
             .bind(self.id)
             .bind(label_id)
@@ -118,16 +118,42 @@ impl Note{
     }
 
     pub async fn get_labels(self, pool: web::Data<PgPool>) -> Result<Vec<Label>, Error>{
-        let labels = query_as!(Label, r#"SELECT l.id, l.name FROM labels l INNER JOIN notes_labels nl ON l.id = nl.label_id AND nl.note_id = $1"#, self.id)
+        query_as!(Label, r#"SELECT l.id, l.name FROM labels l INNER JOIN notes_labels nl ON l.id = nl.label_id AND nl.note_id = $1"#, self.id)
             .fetch_all(pool.get_ref())
-            .await?;
-        Ok(labels)
+            .await
     }
 
     pub async fn get_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<Label, Error>{
-        let label = query_as!(Label, r#"SELECT id, name FROM labels WHERE id = $1"#, label_id)
+        query_as!(Label, r#"SELECT id, name FROM labels WHERE id = $1"#, label_id)
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(label)
+            .await
+    }
+
+    pub async fn set_category(self, pool: web::Data<PgPool>, category_id: i32) -> Result<PgQueryResult, Error>{
+        query("INSERT INTO notes_categories (note_id, category_id) VALUES (?, ?);")
+            .bind(self.id)
+            .bind(category_id)
+            .execute(pool.get_ref())
+            .await
+    }
+
+    pub async fn unset_category(self, pool: web::Data<PgPool>, category_id: i32) -> Result<PgQueryResult, Error>{
+        query("DELETE FROM notes_categories WHERE node_id = ?, category_id = ?")
+            .bind(self.id)
+            .bind(category_id)
+            .execute(pool.get_ref())
+            .await
+    }
+
+    pub async fn get_categories(self, pool: web::Data<PgPool>) -> Result<Vec<Category>, Error>{
+        query_as!(Category, r#"SELECT c.id, c.name FROM categories c INNER JOIN notes_categories nc ON c.id = nc.category_id AND nc.note_id = $1"#, self.id)
+            .fetch_all(pool.get_ref())
+            .await
+    }
+
+    pub async fn get_category(self, pool: web::Data<PgPool>, category_id: i32) -> Result<Category, Error>{
+        query_as!(Category, r#"SELECT id, name FROM categories WHERE id = $1"#, category_id)
+            .fetch_one(pool.get_ref())
+            .await
     }
 }
