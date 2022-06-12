@@ -8,6 +8,8 @@ mod routes;
 use sqlx::postgres::PgPoolOptions;
 use actix_web::{App, HttpServer, web::Data};
 use dotenv::dotenv;
+use utoipa_swagger_ui::SwaggerUi;
+use utoipa::OpenApi;
 use std::env;
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
@@ -17,6 +19,19 @@ use routes::{root,
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let db_url = env::var("DATABASE_URL").expect("Database not found");
+
+    #[derive(OpenApi)]
+    #[openapi(
+        handlers(
+            note::all
+        ),
+        components(Todo, TodoUpdateRequest, ErrorResponse),
+        tags(
+            (name = "todo", description = "Todo management endpoints.")
+        ),
+    )]
+    struct ApiDoc;
+
     let pool = PgPoolOptions::new()
         .max_connections(4)
         .connect(&db_url)
@@ -35,6 +50,10 @@ async fn main() -> std::io::Result<()> {
             .service(new_category)
             .service(all_labels)
             .service(new_label)
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-doc/openapi.json", ApiDoc::openapi()),
+                )
     })
     .bind("127.0.0.1:8080")
     .unwrap()
