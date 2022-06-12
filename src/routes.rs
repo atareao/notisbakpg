@@ -1,7 +1,7 @@
 use actix_web::{get, post, put, delete, web, error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse, http::StatusCode};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::note::{Note, NewNote};
+use crate::note::{Note, NewNote, UpdateNote};
 use crate::category::{Category, NewCategory};
 use crate::label::{Label, NewLabel};
 
@@ -45,7 +45,7 @@ pub async fn read_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<Ht
 }
 
 #[put("/notes")]
-pub async fn update_note(pool: web::Data<PgPool>, data: web::Json<Note>) -> Result<HttpResponse, Error>{
+pub async fn update_note(pool: web::Data<PgPool>, data: web::Json<UpdateNote>) -> Result<HttpResponse, Error>{
     let note = data.into_inner();
     Note::update(pool, note)
        .await
@@ -58,7 +58,7 @@ pub async fn delete_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<
     let note_id = path.into_inner();
     Note::delete(pool, note_id)
        .await
-       .map(|message| HttpResponse::Ok().body(message))
+       .map(|note| HttpResponse::Ok().json(note))
        .map_err(|_| ErrorNotFound("Not found"))
 }
 

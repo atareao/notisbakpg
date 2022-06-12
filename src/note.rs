@@ -21,6 +21,13 @@ pub struct NewNote{
     pub title: String,
 }
 
+#[derive(Debug, FromRow, Serialize, Deserialize, Component)]
+pub struct UpdateNote{
+    pub id: i32,
+    pub title: String,
+    pub body: String,
+}
+
 mod note_api{
     use crate::note::Note;
 
@@ -49,52 +56,49 @@ mod note_api{
 
 impl Note{
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
-        let notes = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
+        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
             .fetch_all(pool.get_ref())
-            .await?;
-        Ok(notes)
+            .await
     }
 
     pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
-        let note = query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=$1"#, id)
+        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note)
+            .await
     }
 
     pub async fn new(pool: web::Data<PgPool>, title: &str, body_option: Option<&str>) -> Result<Note, Error>{
         let body = body_option.unwrap_or("");
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
-        let note = query_as!(Note,
-                             r#"INSERT INTO notes (title, body, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, title, body, created_at, updated_at;"#,
-                             title,
-                             body,
-                             created_at,
-                             updated_at)
+        query_as!(Note,
+                  r#"INSERT INTO notes (title, body, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, title, body, created_at, updated_at;"#,
+                  title,
+                  body,
+                  created_at,
+                  updated_at)
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note)
+            .await
     }
 
-    pub async fn update(pool: web::Data<PgPool>, note: Note) -> Result<Note, Error>{
+    pub async fn update(pool: web::Data<PgPool>, note: UpdateNote) -> Result<Note, Error>{
         let updated_at = Utc::now().naive_utc();
-        query("UPDATE notes SET title=?, body=?, updated_at=? WHERE id=?;")
-            .bind(note.title)
-            .bind(note.body)
-            .bind(updated_at)
-            .bind(note.id)
-            .execute(pool.get_ref())
-            .await?;
-        Self::get(pool, note.id).await
+        query_as!(Note,
+                  r#"UPDATE notes SET title=$1, body=$2, updated_at=$3 WHERE id=$4 RETURNING id, title, body, created_at, updated_at;"#,
+                  note.title,
+                  note.body,
+                  updated_at,
+                  note.id)
+            .fetch_one(pool.get_ref())
+            .await
     }
 
-    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<String, Error>{
-        query("DELETE FROM notes WHERE id = ?;")
-            .bind(id)
-            .execute(pool.get_ref())
-            .await?;
-        Ok("Note deleted".to_string())
+    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
+        query_as!(Note,
+                  r#"DELETE FROM notes WHERE id = $1 RETURNING id, title, body, created_at, updated_at;"#,
+                  id)
+            .fetch_one(pool.get_ref())
+            .await
     }
 
     pub async fn add_label(self, pool: web::Data<PgPool>, label_id: i32) -> Result<PgQueryResult, Error>{
