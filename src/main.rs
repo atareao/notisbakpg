@@ -15,7 +15,7 @@ use std::env;
 use label::Label;
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
-             all_categories, new_category, all_labels, new_label};
+             all_categories, new_category, all_labels, new_label, read_label};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -33,7 +33,8 @@ async fn main() -> std::io::Result<()> {
         ),
     )]
     struct ApiDoc;
-    println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
+    //println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
+    let openapi = ApiDoc::openapi();
 
     let pool = PgPoolOptions::new()
         .max_connections(4)
@@ -53,12 +54,11 @@ async fn main() -> std::io::Result<()> {
             .service(new_category)
             .service(all_labels)
             .service(new_label)
-            /*
+            .service(read_label)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-doc/openapi.json", ApiDoc::openapi()),
+                    .url("/api-doc/openapi.json", openapi.clone()),
                 )
-                */
     })
     .bind("127.0.0.1:8080")
     .unwrap()

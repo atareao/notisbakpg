@@ -93,3 +93,13 @@ pub async fn new_label(pool: web::Data<PgPool>, data: web::Json<NewLabel>) -> Re
        .map(|label| HttpResponse::Ok().json(label))
        .map_err(|_| ErrorNotFound("Not found"))
 }
+
+#[get("/labels/{label_id}")]
+pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+    let label_id = path.into_inner();
+    Label::get(pool, label_id)
+       .await
+       .map(|label| HttpResponse::Ok().json(label))
+       .map_err(|_| ErrorNotFound("Not found"))
+}
+
