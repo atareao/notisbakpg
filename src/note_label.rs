@@ -18,50 +18,39 @@ pub struct NewNoteLabel{
 
 impl NoteLabel{
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<NoteLabel>, Error>{
-        let notes_labels = query_as!(NoteLabel, r#"SELECT id, note_id, label_id FROM notes_labels"#)
+        query_as!(NoteLabel, r#"SELECT id, note_id, label_id FROM notes_labels"#)
             .fetch_all(pool.get_ref())
-            .await?;
-        Ok(notes_labels)
+            .await
     }
 
     pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<NoteLabel, Error>{
-        let note_label = query_as!(NoteLabel, r#"SELECT id, note_id, label_id FROM notes_labels WHERE id=$1"#, id)
+        query_as!(NoteLabel, r#"SELECT id, note_id, label_id FROM notes_labels WHERE id=$1"#, id)
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note_label)
+            .await
     }
 
     pub async fn get_last_inserted(pool: web::Data<PgPool>) -> Result<NoteLabel, Error>{
-        let note_label = query_as!(NoteLabel, r#"SELECT id, note_id, label_id FROM notes_labels WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes_labels', 'id')))"#)
+        query_as!(NoteLabel, r#"SELECT id, note_id, label_id FROM notes_labels WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes_labels', 'id')))"#)
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note_label)
+            .await
     }
 
     pub async fn new(pool: web::Data<PgPool>, note_id: i32, label_id: i32) -> Result<NoteLabel, Error>{
-        let id = query("INSERT INTO notes_labels (note_id, label_id) VALUES (?, ?);")
-            .bind(note_id)
-            .bind(label_id)
-            .execute(pool.get_ref())
-            .await?;
-        Self::get_last_inserted(pool).await
+        query_as!(NoteLabel, r#"INSERT INTO notes_labels (note_id, label_id) VALUES ($1, $2) RETURNING id, note_id, label_id;"#, note_id, label_id)
+            .fetch_one(pool.get_ref())
+            .await
     }
 
     pub async fn update(pool: web::Data<PgPool>, note_label: NoteLabel) -> Result<NoteLabel, Error>{
-        query("UPDATE notes_labels SET note_id=?, label_id=? WHERE id=?;")
-            .bind(note_label.note_id)
-            .bind(note_label.label_id)
-            .execute(pool.get_ref())
-            .await?;
-        Self::get(pool, note_label.id).await
+        query_as!(NoteLabel, r#"UPDATE notes_labels SET note_id=$2, label_id=$3 WHERE id=$1 RETURNING id, note_id, label_id;"#, note_label.id, note_label.note_id, note_label.label_id)
+            .fetch_one(pool.get_ref())
+            .await
     }
 
-    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<String, Error>{
-        query("DELETE FROM notes_labels WHERE id = ?;")
-            .bind(id)
-            .execute(pool.get_ref())
-            .await?;
-        Ok("Note Label deleted".to_string())
+    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<NoteLabel, Error>{
+        query_as!(NoteLabel, r#"DELETE FROM notes_labels WHERE id = $1 RETURNING id, note_id, label_id;"#, id)
+            .fetch_one(pool.get_ref())
+            .await
     }
 }
 
