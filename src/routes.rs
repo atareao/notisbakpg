@@ -28,8 +28,8 @@ async fn test_index() {
 }
 
 #[get("/notes")]
-pub async fn all_notes(pool: web::Data<PgPool>)->Result<HttpResponse, Error>{
-    Note::all(pool)
+pub async fn all_notes(pool: web::Data<PgPool>, user_id: i32)->Result<HttpResponse, Error>{
+    Note::all(pool, user_id)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
         .map_err(|_| ErrorBadRequest("Not found"))

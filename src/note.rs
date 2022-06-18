@@ -14,11 +14,13 @@ pub struct Note{
     pub body: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub user_id: i32,
 }
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
 pub struct NewNote{
     pub title: String,
+    pub user_id: i32,
 }
 
 #[derive(Debug, FromRow, Serialize, Deserialize, Component)]
@@ -26,6 +28,7 @@ pub struct UpdateNote{
     pub id: i32,
     pub title: String,
     pub body: String,
+    pub user_id: i32,
 }
 
 mod note_api{
@@ -42,7 +45,7 @@ mod note_api{
             ("id" = i32, path, description = "Note database id to get Note for"),
         )
     )]
-    async fn get_note_by_id(note_id: i32) -> Note {
+    async fn get_note_by_id(note_id: i32, user_id: i32) -> Note {
         let current = chrono::Utc::now().naive_utc();
         Note {
             id: note_id,
@@ -50,19 +53,20 @@ mod note_api{
             body: "Sample body".to_string(),
             created_at: current,
             updated_at: current,
+            user_id
         }
     }
 }
 
 impl Note{
-    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
-        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
+    pub async fn all(pool: web::Data<PgPool>, user_id: i32) -> Result<Vec<Note>, Error>{
+        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at, user_id FROM notes WHERE user_id=$1"#, user_id)
             .fetch_all(pool.get_ref())
             .await
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
-        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id=$1"#, id)
+    pub async fn get(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Note, Error>{
+        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at, user_id FROM notes WHERE id=$1 AND user_id=$2"#, id, user_id)
             .fetch_one(pool.get_ref())
             .await
     }

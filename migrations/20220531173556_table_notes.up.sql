@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS notes(
     body TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
-    UNIQUE (title)
+    user_id INTEGER NOT NULL,
+    UNIQUE (title, user_id)
 );
