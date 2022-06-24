@@ -1,6 +1,6 @@
 use actix_web::{get, post, put, delete, web,
                 error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse,
-                http::StatusCode, test::{self, TestRequest}, App};
+                HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
 use anyhow::Result;
 use sqlx::PgPool;
 use crate::note::{Note, NewNote, UpdateNote};
@@ -28,8 +28,9 @@ async fn test_index() {
 }
 
 #[get("/notes")]
-pub async fn all_notes(pool: web::Data<PgPool>, user_id: i32)->Result<HttpResponse, Error>{
-    Note::all(pool, user_id)
+pub async fn all_notes(req: HttpRequest, pool: web::Data<PgPool>)->Result<HttpResponse, Error>{
+    let token = req.headers().get("token").expect("No token provided").to_str().unwrap();
+    Note::all(pool, token)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
         .map_err(|_| ErrorBadRequest("Not found"))
@@ -53,9 +54,10 @@ pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)
 }
 
 #[get("/notes/{note_id}")]
-pub async fn read_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+    let token = req.headers().get("token").unwrap().to_str().unwrap();
     let note_id = path.into_inner();
-    Note::get(pool, note_id)
+    Note::get(pool, note_id, token)
        .await
        .map(|note| HttpResponse::Ok().json(note))
        .map_err(|_| ErrorNotFound("Not found"))

@@ -14,13 +14,11 @@ pub struct Note{
     pub body: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-    pub user_id: i32,
 }
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
 pub struct NewNote{
     pub title: String,
-    pub user_id: i32,
 }
 
 #[derive(Debug, FromRow, Serialize, Deserialize, Component)]
@@ -28,7 +26,6 @@ pub struct UpdateNote{
     pub id: i32,
     pub title: String,
     pub body: String,
-    pub user_id: i32,
 }
 
 mod note_api{
@@ -53,20 +50,27 @@ mod note_api{
             body: "Sample body".to_string(),
             created_at: current,
             updated_at: current,
-            user_id
         }
     }
 }
 
 impl Note{
-    pub async fn all(pool: web::Data<PgPool>, user_id: i32) -> Result<Vec<Note>, Error>{
-        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at, user_id FROM notes WHERE user_id=$1"#, user_id)
+    pub async fn all(pool: web::Data<PgPool>, token: &str) -> Result<Vec<Note>, Error>{
+        query_as!(Note, r#"
+                  SELECT n.id, n.title, n.body, n.created_at, n.updated_at
+                  FROM notes n
+                  INNER JOIN users u ON n.user_id=u.id
+                  WHERE u.token=$1"#, token)
             .fetch_all(pool.get_ref())
             .await
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Note, Error>{
-        query_as!(Note, r#"SELECT id, title, body, created_at, updated_at, user_id FROM notes WHERE id=$1 AND user_id=$2"#, id, user_id)
+    pub async fn get(pool: web::Data<PgPool>, id: i32, token: &str) -> Result<Note, Error>{
+        query_as!(Note, r#"
+                  SELECT n.id, n.title, n.body, n.created_at, n.updated_at
+                  FROM notes n
+                  INNER JOIN users u ON n.user_id=u.id
+                  WHERE n.id=$1 AND u.token=$2"#, id, token)
             .fetch_one(pool.get_ref())
             .await
     }
