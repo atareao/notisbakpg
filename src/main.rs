@@ -6,8 +6,9 @@ mod note_category;
 mod routes;
 mod label_api;
 
+use actix_web_httpauth::extractors::{basic::{BasicAuth, Config}, AuthenticationError};
 use sqlx::postgres::PgPoolOptions;
-use actix_web::{App, HttpServer, web::Data};
+use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest, Error};
 use dotenv::dotenv;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
@@ -68,4 +69,24 @@ async fn main() -> std::io::Result<()> {
     .unwrap()
     .run()
     .await
+}
+
+async fn basic_auth_validator(req: ServiceRequest, credentials: BasicAuth)->Result<ServiceRequest, std::io::Error>{
+    let config = req
+        .app_data::<Config>()
+        .map(|data| data.get_ref().clone())
+        .unwrap_or_else(Default::default);
+    if let Ok(res) = validate_credentials(credentials.user_id(), credentials.password().unwrap().trim()){
+        if res {
+            return Ok(req);
+        }
+    }
+    Err(std::io::Error::new(std::io::ErrorKind::Other, "Authentication failed!"))
+}
+
+fn validate_credentials(user_id: &str, user_password: &str) -> Result<bool, std::io::Error>{
+    if user_id.eq("karl") && user_password.eq("password") {
+        return Ok(true);
+    }
+    Err(std::io::Error::new(std::io::ErrorKind::Other, "Authentication failed!"))
 }
