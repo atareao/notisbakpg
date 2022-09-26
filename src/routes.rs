@@ -29,8 +29,9 @@ async fn test_index() {
 
 #[get("/notes")]
 pub async fn all_notes(req: HttpRequest, pool: web::Data<PgPool>)->Result<HttpResponse, Error>{
-    let token = req.headers().get("token").expect("No token provided").to_str().unwrap();
-    Note::all(pool, token)
+    // let token = req.headers().get("token").expect("No token provided").to_str().unwrap();
+    //Note::all(pool, token)
+    Note::all(pool)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
         .map_err(|_| ErrorBadRequest("Not found"))
@@ -57,7 +58,7 @@ pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)
 pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let token = req.headers().get("token").unwrap().to_str().unwrap();
     let note_id = path.into_inner();
-    Note::get(pool, note_id, token)
+    Note::get(pool, note_id)
        .await
        .map(|note| HttpResponse::Ok().json(note))
        .map_err(|_| ErrorNotFound("Not found"))

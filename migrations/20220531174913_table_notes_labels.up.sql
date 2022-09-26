@@ -3,7 +3,5 @@
 CREATE TABLE IF NOT EXISTS notes_labels(
     id SERIAL PRIMARY KEY NOT NULL,
     note_id INTEGER NOT NULL,
-    label_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    UNIQUE (note_id, label_id, user_id)
+    label_id INTEGER NOT NULL
 );

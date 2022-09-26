@@ -4,7 +4,5 @@ CREATE TABLE IF NOT EXISTS notes(
     title TEXT NOT NULL,
     body TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
-    user_id INTEGER NOT NULL,
-    UNIQUE (title, user_id)
+    updated_at TIMESTAMP NOT NULL
 );

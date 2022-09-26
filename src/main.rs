@@ -7,12 +7,12 @@ mod routes;
 mod label_api;
 
 use actix_web_httpauth::extractors::{basic::{BasicAuth, Config}, AuthenticationError};
-use sqlx::postgres::PgPoolOptions;
+use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest, Error};
 use dotenv::dotenv;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipa::OpenApi;
-use std::env;
+use std::{env, path::Path};
 use label::Label;
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
@@ -21,7 +21,26 @@ use routes::{root,
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    let db_url = env::var("DATABASE_URL").expect("Database not found");
+
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL not set");
+    let port = env::var("PORT").expect("PORT not set");
+
+    if !sqlx::Postgres::database_exists(&db_url).await.unwrap(){
+        sqlx::Postgres::create_database(&db_url).await.unwrap()
+    }
+
+    // Migrate the database
+    let migrations = if env::var("RUST_ENV") == Ok("production".to_string()) {
+        // Productions migrations dir
+        std::env::current_exe()?.parent().unwrap().join("migrations")
+    } else {
+        // Development migrations dir
+        let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+        Path::new(&crate_dir)
+            .join("./migrations")
+    };
+    println!("{}", &migrations.display());
+
 
     #[derive(OpenApi)]
     #[openapi(
@@ -44,7 +63,10 @@ async fn main() -> std::io::Result<()> {
         .expect("pool failed");
 
     // Do migration
-    sqlx::migrate!().run(&pool).await.expect("Can not migrate");
+    Migrator::new(migrations)
+        .await.unwrap()
+        .run(&pool)
+        .await.unwrap();
 
     HttpServer::new(move ||{
         App::new()
@@ -65,7 +87,7 @@ async fn main() -> std::io::Result<()> {
                     .url("/api-doc/openapi.json", openapi.clone()),
                 )
     })
-    .bind("127.0.0.1:8080")
+    .bind(format!("0.0.0.0:{}", &port))
     .unwrap()
     .run()
     .await
@@ -74,7 +96,7 @@ async fn main() -> std::io::Result<()> {
 async fn basic_auth_validator(req: ServiceRequest, credentials: BasicAuth)->Result<ServiceRequest, std::io::Error>{
     let config = req
         .app_data::<Config>()
-        .map(|data| data.get_ref().clone())
+        .map(|data| data.to_owned())
         .unwrap_or_else(Default::default);
     if let Ok(res) = validate_credentials(credentials.user_id(), credentials.password().unwrap().trim()){
         if res {

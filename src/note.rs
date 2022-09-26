@@ -55,22 +55,37 @@ mod note_api{
 }
 
 impl Note{
-    pub async fn all(pool: web::Data<PgPool>, token: &str) -> Result<Vec<Note>, Error>{
+    //pub async fn all(pool: web::Data<PgPool>, token: &str) -> Result<Vec<Note>, Error>{
+    //    query_as!(Note, r#"
+    //              SELECT n.id, n.title, n.body, n.created_at, n.updated_at
+    //              FROM notes n
+    //              INNER JOIN users u ON n.user_id=u.id
+    //              WHERE u.token=$1"#, token)
+    //        .fetch_all(pool.get_ref())
+    //        .await
+    //}
+    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
         query_as!(Note, r#"
                   SELECT n.id, n.title, n.body, n.created_at, n.updated_at
-                  FROM notes n
-                  INNER JOIN users u ON n.user_id=u.id
-                  WHERE u.token=$1"#, token)
+                  FROM notes n"#)
             .fetch_all(pool.get_ref())
             .await
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i32, token: &str) -> Result<Note, Error>{
+    // pub async fn get(pool: web::Data<PgPool>, id: i32, token: &str) -> Result<Note, Error>{
+    //     query_as!(Note, r#"
+    //               SELECT n.id, n.title, n.body, n.created_at, n.updated_at
+    //               FROM notes n
+    //               INNER JOIN users u ON n.user_id=u.id
+    //               WHERE n.id=$1 AND u.token=$2"#, id, token)
+    //         .fetch_one(pool.get_ref())
+    //         .await
+    // }
+    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
         query_as!(Note, r#"
                   SELECT n.id, n.title, n.body, n.created_at, n.updated_at
                   FROM notes n
-                  INNER JOIN users u ON n.user_id=u.id
-                  WHERE n.id=$1 AND u.token=$2"#, id, token)
+                  WHERE n.id=$1"#, id)
             .fetch_one(pool.get_ref())
             .await
     }
