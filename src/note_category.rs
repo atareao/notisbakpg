@@ -1,5 +1,5 @@
 use actix_web::web;
-use sqlx::{query, query_as, FromRow, Error, postgres::PgPool};
+use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow}};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, FromRow, Serialize, Deserialize)]
@@ -12,33 +12,50 @@ pub struct NoteCategory{
 
 impl NoteCategory{
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<NoteCategory>, Error>{
-        let notes_categories = query_as!(NoteCategory, r#"SELECT id, note_id, category_id FROM notes_categories"#)
+        query(r#"SELECT id, note_id, category_id FROM notes_categories"#)
+            .map(|row: PgRow| NoteCategory{
+                id: row.get("id"),
+                note_id: row.get("note_id"),
+                category_id: row.get("category_id"),
+            })
             .fetch_all(pool.get_ref())
-            .await?;
-        Ok(notes_categories)
+            .await
     }
 
     pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<NoteCategory, Error>{
-        let note_category = query_as!(NoteCategory, r#"SELECT id, note_id, category_id FROM notes_categories WHERE id=$1"#, id)
+        query(r#"SELECT id, note_id, category_id FROM notes_categories WHERE id = ?"#)
+            .bind(id)
+            .map(|row: PgRow| NoteCategory{
+                id: row.get("id"),
+                note_id: row.get("note_id"),
+                category_id: row.get("category_id"),
+            })
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note_category)
+            .await
     }
 
     pub async fn get_last_inserted(pool: web::Data<PgPool>) -> Result<NoteCategory, Error>{
-        let note_category = query_as!(NoteCategory, r#"SELECT id, note_id, category_id FROM notes_categories WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes_categories', 'id')))"#)
+        query(r#"SELECT id, note_id, category_id FROM notes_categories WHERE id=(SELECT CURRVAL(PG_GET_SERIAL_SEQUENCE('notes_categories', 'id')))"#)
+            .map(|row: PgRow| NoteCategory{
+                id: row.get("id"),
+                note_id: row.get("note_id"),
+                category_id: row.get("category_id"),
+            })
             .fetch_one(pool.get_ref())
-            .await?;
-        Ok(note_category)
+            .await
     }
 
     pub async fn new(pool: web::Data<PgPool>, note_id: i32, category_id: i32) -> Result<NoteCategory, Error>{
-        let id = query("INSERT INTO notes_categories (note_id, category_id) VALUES (?, ?);")
+        query(r#"INSERT INTO notes_categories (note_id, category_id) VALUES (?, ?) RETURNING id, note_id, category_id;"#)
             .bind(note_id)
             .bind(category_id)
-            .execute(pool.get_ref())
-            .await?;
-        Ok(Self::get_last_inserted(pool).await?)
+            .map(|row: PgRow| NoteCategory{
+                id: row.get("id"),
+                note_id: row.get("note_id"),
+                category_id: row.get("category_id"),
+            })
+            .fetch_one(pool.get_ref())
+            .await
     }
 }
 
