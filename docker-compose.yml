@@ -3,11 +3,13 @@ version: '3.8'
 services:
   notisbak:
     container_name: notisbak
-    image: atareao:notisbak:latest
+    image: atareao/notisbak:latest
     init: true
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - postgres
     networks:
       - proxy
       - internal
@@ -16,23 +18,21 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.notisbak.loadbalancer.server.port=${PORT}
-      - traefik.http.routers.notisbak.entrypoints=web
-      - traefik.http.routers.notisbak.rule=Host(`${FQDN}`)
-      - traefik.http.middlewares.notisbak-https-redirect.redirectscheme.scheme=websecure
+      - traefik.http.routers.notisbak.entrypoints=http
+      - traefik.http.routers.notisbak.rule=Host(`${NOTISBAK_FQDN}`)
+      - traefik.http.middlewares.notisbak-https-redirect.redirectscheme.scheme=https
       - traefik.http.routers.notisbak.middlewares=notisbak-https-redirect
-      - traefik.http.routers.notisbak-secure.entrypoints=websecure
-      - traefik.http.routers.notisbak-secure.rule=Host(`${FQDN}`)
+      - traefik.http.routers.notisbak-secure.entrypoints=https
+      - traefik.http.routers.notisbak-secure.rule=Host(`${NOTISBAK_FQDN}`)
       - traefik.http.routers.notisbak-secure.tls=true
-      - traefik.http.routers.notisbak-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.notisbak-secure.tls.certresolver=myresolver
 
   postgres:
     container_name: postgres
     image: postgres:latest
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: test_db
+    env_file:
+      - .env
     volumes:
       - ./postgres_data:/var/lib/postgresql/data
     logging:
@@ -45,9 +45,10 @@ services:
     container_name: pgadmin4
     image: dpage/pgadmin4
     restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: atareao@atareao.es
-      PGADMIN_DEFAULT_PASSWORD: root
+    depends_on:
+      - postgres
+    env_file:
+      - .env
     volumes:
       - ./pgadmin:/var/lib/pgadmin
     logging:
@@ -58,11 +59,16 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.services.nbpgadmin.loadbalancer.server.port=80
-      - traefik.http.routers.nbpgadmin.entrypoints=web
-      - traefik.http.routers.nbpgadmin.rule=Host(`${FQDN}`)
-      - traefik.http.middlewares.nbpgadmin-https-redirect.redirectscheme.scheme=websecure
+      - traefik.http.routers.nbpgadmin.entrypoints=http
+      - traefik.http.routers.nbpgadmin.rule=Host(`${PGADMIN_FQDN}`)
+      - traefik.http.middlewares.nbpgadmin-https-redirect.redirectscheme.scheme=https
       - traefik.http.routers.nbpgadmin.middlewares=nbpgadmin-https-redirect
-      - traefik.http.routers.nbpgadmin-secure.entrypoints=websecure
-      - traefik.http.routers.nbpgadmin-secure.rule=Host(`${FQDN}`)
+      - traefik.http.routers.nbpgadmin-secure.entrypoints=https
+      - traefik.http.routers.nbpgadmin-secure.rule=Host(`${PGADMIN_FQDN}`)
       - traefik.http.routers.nbpgadmin-secure.tls=true
-      - traefik.http.routers.nbpgadmin-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.nbpgadmin-secure.tls.certresolver=myresolver
+
+networks:
+  internal:
+  proxy:
+    external: true
