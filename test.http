@@ -4,6 +4,8 @@ GET http://{{NOTISBAK_FQDN}}/notes
 
 GET http://{{NOTISBAK_FQDN}}/api-doc/openapi.json
 
+GET http://{{NOTISBAK_FQDN}}/swagger-ui/
+
 POST http://{{NOTISBAK_FQDN}}/notes
 Content-Type: application/json
 
