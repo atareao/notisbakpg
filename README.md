@@ -2,6 +2,24 @@
 
 A back for notis
 
+## To work
+
+In order to work notisbak
+
+```
+mkdir notisbak
+cd notisbak
+mkdir pgadmin posgres_data
+sudo chown -R 5050 pgadmin
+sudo chown -R 999 posgtres_data
+wget https://raw.githubusercontent.com/atareao/notisbakpg/main/docker-compose.yml
+wget https://raw.githubusercontent.com/atareao/notisbakpg/main/sample.env
+cp sample.env .env
+docker-compose up -d
+```
+
+## Some notes to work with it
+
 Dependecies:
 
 * `sqlx-cli`. To do all work
