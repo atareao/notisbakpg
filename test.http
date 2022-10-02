@@ -2,7 +2,7 @@ GET http://{{NOTISBAK_FQDN}}/
 
 GET http://{{NOTISBAK_FQDN}}/notes
 
-GET http://{{NOTISBAK_FQDN}}/swagger-ui/api-doc/openapi.json
+GET http://{{NOTISBAK_FQDN}}/api-doc/openapi.json
 
 POST http://{{NOTISBAK_FQDN}}/notes
 Content-Type: application/json
