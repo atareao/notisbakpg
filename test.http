@@ -1,22 +1,40 @@
-GET http://localhost:8080/
+GET http://{{NOTISBAK_FQDN}}/
 
-GET http://localhost:8080/notes
+GET http://{{NOTISBAK_FQDN}}/notes
 
-GET http://localhost:8080/swagger-ui/api-doc/openapi.json
+GET http://{{NOTISBAK_FQDN}}/swagger-ui/api-doc/openapi.json
 
-POST http://localhost:8080/notes
+POST http://{{NOTISBAK_FQDN}}/notes
 Content-Type: application/json
 
 {
     "title": "Nota 2"
 }
 
-GET http://localhost:8080/categories
-
-POST http://localhost:8080/categories
+PUT http://{{NOTISBAK_FQDN}}/notes
 Content-Type: application/json
 
 {
-    "name": "Nota 1"
+    "id": 1,
+    "title": "Nota 2",
+    "body": "cosa rara"
+}
+
+GET http://{{NOTISBAK_FQDN}}/categories
+
+POST http://{{NOTISBAK_FQDN}}/categories
+Content-Type: application/json
+
+{
+    "name": "Categoria 1"
+}
+
+GET http://{{NOTISBAK_FQDN}}/labels
+
+POST http://{{NOTISBAK_FQDN}}/labels
+Content-Type: application/json
+
+{
+    "name": "Etiqueta 1"
 }
 
