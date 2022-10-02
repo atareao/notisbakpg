@@ -6,7 +6,7 @@ use sqlx::PgPool;
 use crate::note::{Note, NewNote, UpdateNote};
 use crate::category::{Category, NewCategory};
 use crate::label::{Label, NewLabel};
-use bytes::Bytes;
+use serde_json::Value;
 
 #[get("/")]
 pub async fn root() -> Result<HttpResponse, Error>{
@@ -56,7 +56,6 @@ pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)
 
 #[get("/notes/{note_id}")]
 pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
-    let token = req.headers().get("token").unwrap().to_str().unwrap();
     let note_id = path.into_inner();
     Note::get(pool, note_id)
        .await
@@ -65,9 +64,9 @@ pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Pat
 }
 
 #[put("/notes")]
-pub async fn update_note(pool: web::Data<PgPool>, data: web::Json<UpdateNote>) -> Result<HttpResponse, Error>{
-    let note = data.into_inner();
-    Note::update(pool, note)
+pub async fn update_note(pool: web::Data<PgPool>, post: String) -> Result<HttpResponse, Error>{
+    let content: Value = serde_json::from_str(&post).unwrap();
+    Note::update(pool, content)
        .await
        .map(|note| HttpResponse::Ok().json(note))
        .map_err(|_| ErrorNotFound("Not found"))

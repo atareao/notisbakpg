@@ -1,8 +1,11 @@
+use std::convert::TryInto;
+
 use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
 use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow, PgQueryResult}};
 use serde::{Serialize, Deserialize};
 use crate::{label::Label, category::Category};
+use serde_json::Value;
 use utoipa::Component;
 
 //https://github.com/juhaku/utoipa
@@ -55,15 +58,6 @@ mod note_api{
 }
 
 impl Note{
-    //pub async fn all(pool: web::Data<PgPool>, token: &str) -> Result<Vec<Note>, Error>{
-    //    query_as!(Note, r#"
-    //              SELECT n.id, n.title, n.body, n.created_at, n.updated_at
-    //              FROM notes n
-    //              INNER JOIN users u ON n.user_id=u.id
-    //              WHERE u.token=$1"#, token)
-    //        .fetch_all(pool.get_ref())
-    //        .await
-    //}
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
         query(r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
             .map(|row: PgRow| Note{
@@ -77,15 +71,6 @@ impl Note{
             .await
     }
 
-    // pub async fn get(pool: web::Data<PgPool>, id: i32, token: &str) -> Result<Note, Error>{
-    //     query_as!(Note, r#"
-    //               SELECT n.id, n.title, n.body, n.created_at, n.updated_at
-    //               FROM notes n
-    //               INNER JOIN users u ON n.user_id=u.id
-    //               WHERE n.id=$1 AND u.token=$2"#, id, token)
-    //         .fetch_one(pool.get_ref())
-    //         .await
-    // }
     pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
         query(r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
             .bind(id)
@@ -120,13 +105,25 @@ impl Note{
             .await
     }
 
-    pub async fn update(pool: web::Data<PgPool>, note: UpdateNote) -> Result<Note, Error>{
+    pub async fn update(pool: web::Data<PgPool>, content: Value) -> Result<Note, Error>{
         let updated_at = Utc::now().naive_utc();
-        query(r#"UPDATE notes SET title=$1, body=$2, updated_at=$3 WHERE id=$4 RETURNING id, title, body, created_at, updated_at;"#)
-            .bind(note.title)
-            .bind(note.body)
-            .bind(updated_at)
-            .bind(note.id)
+        let id: i32 = content.get("id").as_ref().unwrap().as_i64().unwrap().try_into().unwrap();
+        let title_option = content.get("title");
+        let body_option = content.get("body");
+        let mut sql = query("");
+        if title_option != None && body_option != None{
+            sql = query(r#"UPDATE notes SET title = $1, body = $2, updated_at = $3 WHERE id = $4 RETURNING id, title, body, created_at, updated_at;"#)
+                .bind(title_option.unwrap().as_str().unwrap())
+                .bind(body_option.unwrap().as_str().unwrap());
+        }else if title_option != None{ 
+            sql = query(r#"UPDATE notes SET title = $1, updated_at = $2 WHERE id = $3 RETURNING id, title, body, created_at, updated_at;"#)
+                .bind(title_option.unwrap().as_str().unwrap())
+        }else if body_option != None{
+            sql = query(r#"UPDATE notes SET body = $1, updated_at = $2 WHERE id = $3 RETURNING id, title, body, created_at, updated_at;"#)
+                .bind(body_option.unwrap().as_str().unwrap())
+        }
+        sql.bind(updated_at)
+            .bind(id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
                 title: row.get("title"),
