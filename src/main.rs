@@ -6,14 +6,15 @@ mod note_category;
 mod routes;
 mod label_api;
 
-use actix_web_httpauth::extractors::{basic::{BasicAuth, Config}, AuthenticationError};
+use actix_web_httpauth::extractors::basic::{BasicAuth, Config};
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
-use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest, Error};
+use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest};
 use dotenv::dotenv;
-use utoipa_swagger_ui::SwaggerUi;
+use utoipa_swagger_ui::{SwaggerUi, Url};
 use utoipa::OpenApi;
 use std::{env, path::Path};
 use label::Label;
+use label_api::Labels;
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
              all_categories, new_category, all_labels, new_label, read_label};
@@ -45,16 +46,28 @@ async fn main() -> std::io::Result<()> {
     #[derive(OpenApi)]
     #[openapi(
         handlers(
-            label_api::get_label_by_id
+            label_api::get_label_by_id,
+            label_api::get_all_labels
         ),
-        components(Label),
+        components(
+            Label, Labels
+        ),
         tags(
             (name = "todo", description = "Todo management endpoints.")
         ),
     )]
-    struct ApiDoc;
-    //println!("{}", ApiDoc::openapi().to_pretty_json().unwrap());
-    let openapi = ApiDoc::openapi();
+    struct ApiDoc1;
+
+    #[derive(OpenApi)]
+    #[openapi(
+        handlers(
+            label_api::get_all_labels
+        ),
+        tags(
+            (name = "todo", description = "Todo management endpoints.")
+        ),
+    )]
+    struct ApiDoc2;
 
     let pool = PgPoolOptions::new()
         .max_connections(4)
@@ -82,10 +95,12 @@ async fn main() -> std::io::Result<()> {
             .service(all_labels)
             .service(new_label)
             .service(read_label)
-            .service(
-                SwaggerUi::new("/swagger-ui/{_:.*}")
-                    .url("/api-doc/openapi.json", openapi.clone()),
-                )
+            .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
+                (Url::new("api1", "/api-doc/openapi1.json"),
+                 ApiDoc1::openapi()),
+                (Url::new("api2", "/api-doc/openapi2.json"),
+                 ApiDoc2::openapi()),
+            ]))
     })
     .bind(format!("0.0.0.0:{}", &port))
     .unwrap()
