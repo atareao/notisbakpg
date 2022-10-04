@@ -50,6 +50,9 @@ async fn main() -> std::io::Result<()> {
             routes::categories::read_categories,
             routes::categories::update_category,
             routes::categories::delete_category,
+            routes::notes::create_note,
+            routes::notes::read_note,
+            routes::notes::read_notes,
         ),
         components(
             schemas(label::Label,
@@ -82,11 +85,9 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(Data::new(pool.clone()))
             .service(routes::notes::root)
-            .service(routes::notes::all_notes)
             .service(routes::notes::create_note)
             .service(routes::notes::read_note)
-            .service(routes::notes::update_note)
-            .service(routes::notes::delete_note)
+            .service(routes::notes::read_notes)
             .service(routes::categories::create_category)
             .service(routes::categories::read_category)
             .service(routes::categories::read_categories)

@@ -40,23 +40,51 @@ async fn test_index() {
     assert_eq!(result, bytes::Bytes::from_static(b"Hello world, Rust!"));
 }
 
+#[utoipa::path(
+    request_body = NewNote,
+    responses(
+        (status = 201, description = "Note created successfully", body = Note),
+    )
+)]
+#[post("/notes")]
+pub async fn create_note(pool: web::Data<PgPool>, note: web::Json<NewNote>) -> Result<HttpResponse, Error>{
+    Note::new(pool, note.into_inner())
+       .await
+       .map(|note| HttpResponse::Created().json(note))
+       .map_err(|_| ErrorNotFound("Not found"))
+}
+
+#[utoipa::path(
+    params(
+        ("id", description = "The id of the note"),
+    ),
+    responses(
+        (status = 200, description = "The note for this id", body = Note),
+        (status = 404, description = "Note not found"),
+    )
+)]
+#[get("/notes/{id}")]
+pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+    let id = path.into_inner();
+    Note::get(pool, id)
+       .await
+       .map(|note| HttpResponse::Ok().json(note))
+       .map_err(|_| ErrorNotFound("Not found"))
+}
+
+#[utoipa::path(
+    responses(
+        (status = 200, description = "List all notes", body = [Note])
+    )
+)]
 #[get("/notes")]
-pub async fn all_notes(req: HttpRequest, pool: web::Data<PgPool>)->Result<HttpResponse, Error>{
-    // let token = req.headers().get("token").expect("No token provided").to_str().unwrap();
-    //Note::all(pool, token)
+pub async fn read_notes(req: HttpRequest, pool: web::Data<PgPool>)->Result<HttpResponse, Error>{
     Note::all(pool)
         .await
         .map(|some_notes| HttpResponse::Ok().json(some_notes))
         .map_err(|_| ErrorBadRequest("Not found"))
 }
 
-#[post("/notes")]
-pub async fn create_note(pool: web::Data<PgPool>, data: web::Json<NewNote>) -> Result<HttpResponse, Error>{
-    Note::new(pool, &data.into_inner().title, None)
-       .await
-       .map(|note| HttpResponse::Ok().json(note))
-       .map_err(|_| ErrorNotFound("Not found"))
-}
 
 #[get("/notes/{note_id}/labels/")]
 pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
@@ -67,14 +95,6 @@ pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
-#[get("/notes/{note_id}")]
-pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
-    let note_id = path.into_inner();
-    Note::get(pool, note_id)
-       .await
-       .map(|note| HttpResponse::Ok().json(note))
-       .map_err(|_| ErrorNotFound("Not found"))
-}
 
 #[put("/notes")]
 pub async fn update_note(pool: web::Data<PgPool>, post: String) -> Result<HttpResponse, Error>{

@@ -62,8 +62,9 @@ impl Note{
             .await
     }
 
-    pub async fn new(pool: web::Data<PgPool>, title: &str, body_option: Option<&str>) -> Result<Note, Error>{
-        let body = body_option.unwrap_or("");
+    pub async fn new(pool: web::Data<PgPool>, note: NewNote) -> Result<Note, Error>{
+        let title = note.title;
+        let body = note.body.unwrap_or("".to_string());
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
         query(r#"INSERT INTO notes (title, body, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, title, body, created_at, updated_at;"#,)

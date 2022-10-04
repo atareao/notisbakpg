@@ -1,26 +1,8 @@
-use actix_web::{get, post, put, delete, web,
-                error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse,
-                HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
+use actix_web::{get, post, put, delete, web, error::ErrorNotFound, Error,
+                HttpResponse};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::note::{Note, NewNote};
 use crate::category::{Category, NewCategory};
-use crate::label::{Label, NewLabel};
-use serde_json::Value;
-use serde::{Serialize, Deserialize};
-use utoipa::ToSchema;
-use bytes::Bytes;
-
-/// Todo endpoint error responses
-#[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
-pub(super) enum ErrorResponse {
-    /// When Todo is not found by search term.
-    NotFound(String),
-    /// When there is a conflict storing a new todo.
-    Conflict(String),
-    /// When todo enpoint was called without correct credentials
-    Unauthorized(String),
-}
 
 #[utoipa::path(
     request_body = NewCategory,
@@ -33,7 +15,7 @@ pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCat
     let name = category.into_inner().name;
     Category::new(pool, &name)
        .await
-       .map(|category| HttpResponse::Ok().json(category))
+       .map(|category| HttpResponse::Created().json(category))
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
