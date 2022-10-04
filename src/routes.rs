@@ -4,8 +4,8 @@ use actix_web::{get, post, put, delete, web,
 use anyhow::Result;
 use sqlx::PgPool;
 use crate::note::{Note, NewNote};
-use crate::category::{Category, NewCategory};
-use crate::label::Label;
+use crate::category::Category;
+use crate::label::{Label, NewLabel};
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
@@ -95,6 +95,11 @@ pub async fn delete_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "List all categories", body = [Category])
+    )
+)]
 #[get("/categories")]
 pub async fn all_categories(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
     Category::all(pool)
@@ -103,9 +108,17 @@ pub async fn all_categories(pool: web::Data<PgPool>) -> Result<HttpResponse, Err
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
+#[utoipa::path(
+    request_body = Category,
+    responses(
+        (status = 201, description = "Category created successfully", body = Category),
+    )
+)]
 #[post("/categories")]
-pub async fn new_category(pool: web::Data<PgPool>, data: web::Json<NewCategory>) -> Result<HttpResponse, Error>{
-    Category::new(pool, &data.into_inner().name)
+pub async fn new_category(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
+    let content: Value = serde_json::from_str(&body).unwrap();
+    let name = content.get("name").as_ref().unwrap().as_str().unwrap();
+    Category::new(pool, name)
        .await
        .map(|category| HttpResponse::Ok().json(category))
        .map_err(|_| ErrorNotFound("Not found"))
@@ -113,11 +126,11 @@ pub async fn new_category(pool: web::Data<PgPool>, data: web::Json<NewCategory>)
 
 #[utoipa::path(
     responses(
-        (status = 200, description = "List current todo items", body = [Label])
+        (status = 200, description = "List all labels", body = [Label])
     )
 )]
 #[get("/labels")]
-pub async fn all_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
+pub async fn read_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
     Label::all(pool)
        .await
        .map(|some_labels| HttpResponse::Ok().json(some_labels))
@@ -125,14 +138,13 @@ pub async fn all_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
 }
 
 #[utoipa::path(
-    request_body = Label,
+    request_body = NewLabel,
     responses(
-        (status = 201, description = "Todo created successfully", body = Label),
-        (status = 409, description = "Todo with id already exists", body = ErrorResponse, example = json!(ErrorResponse::Conflict(String::from("id = 1"))))
+        (status = 201, description = "Label created successfully", body = NewLabel),
     )
 )]
 #[post("/labels")]
-pub async fn new_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
+pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
     let content: Value = serde_json::from_str(&body).unwrap();
     let name = content.get("name").as_ref().unwrap().as_str().unwrap();
     Label::new(pool, name)
@@ -141,12 +153,50 @@ pub async fn new_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResp
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
-#[get("/labels/{label_id}")]
+#[utoipa::path(
+    params(
+        ("id", description = "The id of the label"),
+    ),
+    responses(
+        (status = 201, description = "Label created successfully", body = Label),
+    )
+)]
+#[get("/labels/{id}")]
 pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
-    let label_id = path.into_inner();
-    Label::get(pool, label_id)
+    let id = path.into_inner();
+    Label::get(pool, id)
        .await
        .map(|label| HttpResponse::Ok().json(label))
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
+#[utoipa::path(
+    params(
+        ("id", description = "The id of the label"),
+    ),
+    responses(
+        (status = 201, description = "Label created successfully", body = Label),
+    )
+)]
+#[delete("/labels/{id}")]
+pub async fn delete_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+    let id = path.into_inner();
+    Label::delete(pool, id)
+       .await
+       .map(|label| HttpResponse::Ok().json(label))
+       .map_err(|_| ErrorNotFound("Not found"))
+}
+
+#[utoipa::path(
+    request_body = Label,
+    responses(
+        (status = 201, description = "Label updated successfully", body = Label),
+    )
+)]
+#[put("/labels")]
+pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>) -> Result<HttpResponse, Error>{
+    Label::update(pool, label.into_inner())
+       .await
+       .map(|note| HttpResponse::Ok().json(note))
+       .map_err(|_| ErrorNotFound("Not found"))
+}

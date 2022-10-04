@@ -6,28 +6,32 @@ use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow, PgQueryResult}}
 use serde::{Serialize, Deserialize};
 use crate::{label::Label, category::Category};
 use serde_json::Value;
+use utoipa::ToSchema;
 
 //https://github.com/juhaku/utoipa
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct Note{
     pub id: i32,
+    #[schema(example = "Titulo")]
     pub title: String,
+    #[schema(example = "Contenido")]
     pub body: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct NewNote{
     pub title: String,
+    pub body: Option<String>,
 }
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct UpdateNote{
     pub id: i32,
     pub title: String,
-    pub body: String,
+    pub body: Option<String>,
 }
 
 impl Note{

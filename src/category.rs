@@ -1,15 +1,13 @@
 use actix_web::web;
 use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow}};
 use serde::{Serialize, Deserialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct Category{
+    #[schema(example = 1)]
     pub id: i32,
-    pub name: String,
-}
-
-#[derive(Debug, FromRow, Serialize, Deserialize)]
-pub struct NewCategory{
+    #[schema(example = "categoria 1")]
     pub name: String,
 }
 

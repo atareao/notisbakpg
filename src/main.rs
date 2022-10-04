@@ -14,7 +14,7 @@ use utoipa_swagger_ui::{SwaggerUi, Url};
 use std::{env, path::Path};
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
-             all_categories, new_category, all_labels, new_label, read_label};
+             all_categories, new_category};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -43,11 +43,21 @@ async fn main() -> std::io::Result<()> {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            routes::all_labels,
-            routes::new_label,
+            routes::create_label,
+            routes::read_label,
+            routes::read_labels,
+            routes::update_label,
+            routes::delete_label,
+            routes::all_categories,
         ),
         components(
-            schemas(label::Label)
+            schemas(routes::ErrorResponse,
+                    label::Label,
+                    label::NewLabel,
+                    category::Category,
+                    note::Note,
+                    note::NewNote,
+                    note::UpdateNote)
         ),
         tags(
             (name = "todo", description = "Todo management endpoints.")
@@ -78,9 +88,11 @@ async fn main() -> std::io::Result<()> {
             .service(delete_note)
             .service(all_categories)
             .service(new_category)
-            .service(all_labels)
-            .service(new_label)
-            .service(read_label)
+            .service(routes::create_label)
+            .service(routes::read_label)
+            .service(routes::read_labels)
+            .service(routes::update_label)
+            .service(routes::delete_label)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
                 (Url::new("api1", "/api-doc/openapi1.json"),
                  ApiDoc::openapi()),

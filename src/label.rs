@@ -5,8 +5,14 @@ use utoipa::ToSchema;
 
 #[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct Label{
-    #[schema(example = 1)]
+    #[schema(example = "1")]
     pub id: i32,
+    #[schema(example = "etiqueta 1")]
+    pub name: String,
+}
+
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
+pub struct NewLabel{
     #[schema(example = "etiqueta 1")]
     pub name: String,
 }
