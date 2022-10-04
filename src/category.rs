@@ -11,6 +11,12 @@ pub struct Category{
     pub name: String,
 }
 
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
+pub struct NewCategory{
+    #[schema(example = "categoria 1")]
+    pub name: String,
+}
+
 impl Category{
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Category>, Error>{
         query(r#"SELECT id, name FROM categories"#)

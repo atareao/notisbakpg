@@ -12,9 +12,6 @@ use dotenv::dotenv;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::{SwaggerUi, Url};
 use std::{env, path::Path};
-use routes::{root,
-             all_notes, create_note, read_note, update_note, delete_note,
-             all_categories, new_category};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -43,18 +40,22 @@ async fn main() -> std::io::Result<()> {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            routes::create_label,
-            routes::read_label,
-            routes::read_labels,
-            routes::update_label,
-            routes::delete_label,
-            routes::all_categories,
+            routes::labels::create_label,
+            routes::labels::read_label,
+            routes::labels::read_labels,
+            routes::labels::update_label,
+            routes::labels::delete_label,
+            routes::categories::create_category,
+            routes::categories::read_category,
+            routes::categories::read_categories,
+            routes::categories::update_category,
+            routes::categories::delete_category,
         ),
         components(
-            schemas(routes::ErrorResponse,
-                    label::Label,
+            schemas(label::Label,
                     label::NewLabel,
                     category::Category,
+                    category::NewCategory,
                     note::Note,
                     note::NewNote,
                     note::UpdateNote)
@@ -80,19 +81,22 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move ||{
         App::new()
             .app_data(Data::new(pool.clone()))
-            .service(root)
-            .service(all_notes)
-            .service(create_note)
-            .service(read_note)
-            .service(update_note)
-            .service(delete_note)
-            .service(all_categories)
-            .service(new_category)
-            .service(routes::create_label)
-            .service(routes::read_label)
-            .service(routes::read_labels)
-            .service(routes::update_label)
-            .service(routes::delete_label)
+            .service(routes::notes::root)
+            .service(routes::notes::all_notes)
+            .service(routes::notes::create_note)
+            .service(routes::notes::read_note)
+            .service(routes::notes::update_note)
+            .service(routes::notes::delete_note)
+            .service(routes::categories::create_category)
+            .service(routes::categories::read_category)
+            .service(routes::categories::read_categories)
+            .service(routes::categories::update_category)
+            .service(routes::categories::delete_category)
+            .service(routes::labels::create_label)
+            .service(routes::labels::read_label)
+            .service(routes::labels::read_labels)
+            .service(routes::labels::update_label)
+            .service(routes::labels::delete_label)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
                 (Url::new("api1", "/api-doc/openapi1.json"),
                  ApiDoc::openapi()),
