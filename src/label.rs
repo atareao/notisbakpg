@@ -1,16 +1,13 @@
 use actix_web::web;
 use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow}};
 use serde::{Serialize, Deserialize};
-use utoipa::Component;
+use utoipa::ToSchema;
 
-#[derive(Debug, FromRow, Serialize, Deserialize, Component)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct Label{
+    #[schema(example = 1)]
     pub id: i32,
-    pub name: String,
-}
-
-#[derive(Debug, FromRow, Serialize, Deserialize)]
-pub struct NewLabel{
+    #[schema(example = "etiqueta 1")]
     pub name: String,
 }
 

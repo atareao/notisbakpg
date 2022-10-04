@@ -6,11 +6,10 @@ use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow, PgQueryResult}}
 use serde::{Serialize, Deserialize};
 use crate::{label::Label, category::Category};
 use serde_json::Value;
-use utoipa::Component;
 
 //https://github.com/juhaku/utoipa
 
-#[derive(Debug, FromRow, Serialize, Deserialize, Component)]
+#[derive(Debug, FromRow, Serialize, Deserialize)]
 pub struct Note{
     pub id: i32,
     pub title: String,
@@ -24,37 +23,11 @@ pub struct NewNote{
     pub title: String,
 }
 
-#[derive(Debug, FromRow, Serialize, Deserialize, Component)]
+#[derive(Debug, FromRow, Serialize, Deserialize)]
 pub struct UpdateNote{
     pub id: i32,
     pub title: String,
     pub body: String,
-}
-
-mod note_api{
-    use crate::note::Note;
-
-    #[utoipa::path(
-        get,
-        path = "/notes/{id}",
-        responses(
-            (status = 200, description = "Note found succesfully", body = Note),
-            (status = 404, description = "Note was not found")
-        ),
-        params(
-            ("id" = i32, path, description = "Note database id to get Note for"),
-        )
-    )]
-    async fn get_note_by_id(note_id: i32, user_id: i32) -> Note {
-        let current = chrono::Utc::now().naive_utc();
-        Note {
-            id: note_id,
-            title: "Sample title".to_string(),
-            body: "Sample body".to_string(),
-            created_at: current,
-            updated_at: current,
-        }
-    }
 }
 
 impl Note{

@@ -4,17 +4,14 @@ mod category;
 mod note_label;
 mod note_category;
 mod routes;
-mod label_api;
 
 use actix_web_httpauth::extractors::basic::{BasicAuth, Config};
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest};
 use dotenv::dotenv;
-use utoipa_swagger_ui::{SwaggerUi, Url};
 use utoipa::OpenApi;
+use utoipa_swagger_ui::{SwaggerUi, Url};
 use std::{env, path::Path};
-use label::Label;
-use label_api::Labels;
 use routes::{root,
              all_notes, create_note, read_note, update_note, delete_note,
              all_categories, new_category, all_labels, new_label, read_label};
@@ -45,29 +42,18 @@ async fn main() -> std::io::Result<()> {
 
     #[derive(OpenApi)]
     #[openapi(
-        handlers(
-            label_api::get_label_by_id,
-            label_api::get_all_labels
+        paths(
+            routes::all_labels,
+            routes::new_label,
         ),
         components(
-            Label, Labels
+            schemas(label::Label)
         ),
         tags(
             (name = "todo", description = "Todo management endpoints.")
         ),
     )]
-    struct ApiDoc1;
-
-    #[derive(OpenApi)]
-    #[openapi(
-        handlers(
-            label_api::get_all_labels
-        ),
-        tags(
-            (name = "todo", description = "Todo management endpoints.")
-        ),
-    )]
-    struct ApiDoc2;
+    struct ApiDoc;
 
     let pool = PgPoolOptions::new()
         .max_connections(4)
@@ -97,9 +83,7 @@ async fn main() -> std::io::Result<()> {
             .service(read_label)
             .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
                 (Url::new("api1", "/api-doc/openapi1.json"),
-                 ApiDoc1::openapi()),
-                (Url::new("api2", "/api-doc/openapi2.json"),
-                 ApiDoc2::openapi()),
+                 ApiDoc::openapi()),
             ]))
     })
     .bind(format!("0.0.0.0:{}", &port))

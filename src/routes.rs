@@ -3,10 +3,24 @@ use actix_web::{get, post, put, delete, web,
                 HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::note::{Note, NewNote, UpdateNote};
+use crate::note::{Note, NewNote};
 use crate::category::{Category, NewCategory};
-use crate::label::{Label, NewLabel};
+use crate::label::Label;
 use serde_json::Value;
+use serde::{Serialize, Deserialize};
+use utoipa::ToSchema;
+use bytes::Bytes;
+
+/// Todo endpoint error responses
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
+pub(super) enum ErrorResponse {
+    /// When Todo is not found by search term.
+    NotFound(String),
+    /// When there is a conflict storing a new todo.
+    Conflict(String),
+    /// When todo enpoint was called without correct credentials
+    Unauthorized(String),
+}
 
 #[get("/")]
 pub async fn root() -> Result<HttpResponse, Error>{
@@ -97,6 +111,11 @@ pub async fn new_category(pool: web::Data<PgPool>, data: web::Json<NewCategory>)
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
+#[utoipa::path(
+    responses(
+        (status = 200, description = "List current todo items", body = [Label])
+    )
+)]
 #[get("/labels")]
 pub async fn all_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
     Label::all(pool)
@@ -105,9 +124,18 @@ pub async fn all_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
+#[utoipa::path(
+    request_body = Label,
+    responses(
+        (status = 201, description = "Todo created successfully", body = Label),
+        (status = 409, description = "Todo with id already exists", body = ErrorResponse, example = json!(ErrorResponse::Conflict(String::from("id = 1"))))
+    )
+)]
 #[post("/labels")]
-pub async fn new_label(pool: web::Data<PgPool>, data: web::Json<NewLabel>) -> Result<HttpResponse, Error>{
-    Label::new(pool, &data.into_inner().name)
+pub async fn new_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
+    let content: Value = serde_json::from_str(&body).unwrap();
+    let name = content.get("name").as_ref().unwrap().as_str().unwrap();
+    Label::new(pool, name)
        .await
        .map(|label| HttpResponse::Ok().json(label))
        .map_err(|_| ErrorNotFound("Not found"))
