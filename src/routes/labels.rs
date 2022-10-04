@@ -9,7 +9,8 @@ use serde_json::Value;
 #[utoipa::path(
     responses(
         (status = 200, description = "List all labels", body = [Label])
-    )
+    ),
+    tag  = "labels"
 )]
 #[get("/labels")]
 pub async fn read_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
@@ -23,7 +24,8 @@ pub async fn read_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>
     request_body = NewLabel,
     responses(
         (status = 201, description = "Label created successfully", body = NewLabel),
-    )
+    ),
+    tag  = "labels"
 )]
 #[post("/labels")]
 pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
@@ -41,7 +43,8 @@ pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpR
     ),
     responses(
         (status = 201, description = "Label created successfully", body = Label),
-    )
+    ),
+    tag  = "labels"
 )]
 #[get("/labels/{id}")]
 pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
@@ -56,7 +59,8 @@ pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<H
     request_body = Label,
     responses(
         (status = 201, description = "Label updated successfully", body = Label),
-    )
+    ),
+    tag  = "labels"
 )]
 #[put("/labels")]
 pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>) -> Result<HttpResponse, Error>{
@@ -72,7 +76,8 @@ pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>) -> R
     ),
     responses(
         (status = 201, description = "Label created successfully", body = Label),
-    )
+    ),
+    tag  = "labels"
 )]
 #[delete("/labels/{id}")]
 pub async fn delete_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{

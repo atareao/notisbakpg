@@ -44,7 +44,8 @@ async fn test_index() {
     request_body = NewNote,
     responses(
         (status = 201, description = "Note created successfully", body = Note),
-    )
+    ),
+    tag = "notes"
 )]
 #[post("/notes")]
 pub async fn create_note(pool: web::Data<PgPool>, note: web::Json<NewNote>) -> Result<HttpResponse, Error>{
@@ -61,7 +62,8 @@ pub async fn create_note(pool: web::Data<PgPool>, note: web::Json<NewNote>) -> R
     responses(
         (status = 200, description = "The note for this id", body = Note),
         (status = 404, description = "Note not found"),
-    )
+    ),
+    tag = "notes"
 )]
 #[get("/notes/{id}")]
 pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
@@ -75,7 +77,8 @@ pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>, path: web::Pat
 #[utoipa::path(
     responses(
         (status = 200, description = "List all notes", body = [Note])
-    )
+    ),
+    tag = "notes"
 )]
 #[get("/notes")]
 pub async fn read_notes(req: HttpRequest, pool: web::Data<PgPool>)->Result<HttpResponse, Error>{

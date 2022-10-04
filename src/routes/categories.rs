@@ -8,7 +8,8 @@ use crate::category::{Category, NewCategory};
     request_body = NewCategory,
     responses(
         (status = 201, description = "Category created successfully", body = Category),
-    )
+    ),
+    tag = "categories",
 )]
 #[post("/categories")]
 pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCategory>) -> Result<HttpResponse, Error>{
@@ -26,7 +27,8 @@ pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCat
     responses(
         (status = 200, description = "The category fot this id", body = Category),
         (status = 404, description = "Category not found", body = Category),
-    )
+    ),
+    tag = "categories",
 )]
 #[get("/categories/{id}")]
 pub async fn read_category(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
@@ -40,7 +42,8 @@ pub async fn read_category(pool: web::Data<PgPool>, path: web::Path<i32>)->Resul
 #[utoipa::path(
     responses(
         (status = 200, description = "List all categories", body = [Category])
-    )
+    ),
+    tag = "categories",
 )]
 #[get("/categories")]
 pub async fn read_categories(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
@@ -55,7 +58,8 @@ pub async fn read_categories(pool: web::Data<PgPool>) -> Result<HttpResponse, Er
     responses(
         (status = 201, description = "Category updated successfully", body = Category),
         (status = 404, description = "Category not found", body = Category),
-    )
+    ),
+    tag = "categories",
 )]
 #[put("/categories")]
 pub async fn update_category(pool: web::Data<PgPool>, category: web::Json<Category>) -> Result<HttpResponse, Error>{
@@ -71,7 +75,8 @@ pub async fn update_category(pool: web::Data<PgPool>, category: web::Json<Catego
     ),
     responses(
         (status = 201, description = "Category deleted successfully", body = Category),
-    )
+    ),
+    tag = "categories",
 )]
 #[delete("/categories/{id}")]
 pub async fn delete_category(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
