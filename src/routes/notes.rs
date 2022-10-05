@@ -3,7 +3,7 @@ use actix_web::{get, post, put, delete, web,
                 HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::note::{Note, NewNote};
+use crate::{note::{Note, NewNote}, category::Category};
 use crate::label::{Label, NewLabel};
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
@@ -89,16 +89,51 @@ pub async fn read_notes(req: HttpRequest, pool: web::Data<PgPool>)->Result<HttpR
 }
 
 
-#[get("/notes/{note_id}/labels/")]
+#[utoipa::path(
+    params(
+        ("id", description = "The id of the note"),
+    ),
+    responses(
+        (status = 200, description = "List all labels por a note", body = [Category])
+    ),
+    tag = "notes"
+)]
+#[get("/notes/{id}/categories/")]
+pub async fn read_categories_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+    let id = path.into_inner();
+    Category::get_categories_for_note(pool, id)
+       .await
+       .map(|categories| HttpResponse::Ok().json(categories))
+       .map_err(|_| ErrorNotFound("Not found"))
+}
+
+#[utoipa::path(
+    params(
+        ("id", description = "The id of the note"),
+    ),
+    responses(
+        (status = 200, description = "List all labels por a note", body = [Label])
+    ),
+    tag = "notes"
+)]
+#[get("/notes/{id}/labels/")]
 pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
-    let note_id = path.into_inner();
-    Label::get_labels_for_note(pool, note_id)
+    let id = path.into_inner();
+    Label::get_labels_for_note(pool, id)
        .await
        .map(|labels| HttpResponse::Ok().json(labels))
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
 
+#[utoipa::path(
+    request_body = Note,
+    responses(
+        (status = 201, description = "Category updated successfully", body = Note),
+        (status = 404, description = "Category not found", body = Note),
+    ),
+    tag = "notes",
+)]
 #[put("/notes")]
 pub async fn update_note(pool: web::Data<PgPool>, post: String) -> Result<HttpResponse, Error>{
     let content: Value = serde_json::from_str(&post).unwrap();
@@ -108,10 +143,19 @@ pub async fn update_note(pool: web::Data<PgPool>, post: String) -> Result<HttpRe
        .map_err(|_| ErrorNotFound("Not found"))
 }
 
-#[delete("/notes/{note_id}")]
+#[utoipa::path(
+    params(
+        ("id", description = "The id of the note"),
+    ),
+    responses(
+        (status = 201, description = "Deleted note", body = Note),
+    ),
+    tag = "notes",
+)]
+#[delete("/notes/{id}")]
 pub async fn delete_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
-    let note_id = path.into_inner();
-    Note::delete(pool, note_id)
+    let id = path.into_inner();
+    Note::delete(pool, id)
        .await
        .map(|note| HttpResponse::Ok().json(note))
        .map_err(|_| ErrorNotFound("Not found"))
