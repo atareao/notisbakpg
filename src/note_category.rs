@@ -46,7 +46,7 @@ impl NoteCategory{
     }
 
     pub async fn new(pool: web::Data<PgPool>, note_id: i32, category_id: i32) -> Result<NoteCategory, Error>{
-        query(r#"INSERT INTO notes_categories (note_id, category_id) VALUES (?, ?) RETURNING id, note_id, category_id;"#)
+        query(r#"INSERT INTO notes_categories (note_id, category_id) VALUES ($1, $2) RETURNING id, note_id, category_id;"#)
             .bind(note_id)
             .bind(category_id)
             .map(|row: PgRow| NoteCategory{
