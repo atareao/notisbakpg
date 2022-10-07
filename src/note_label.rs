@@ -46,7 +46,7 @@ impl NoteLabel{
     }
 
     pub async fn new(pool: web::Data<PgPool>, note_id: i32, label_id: i32) -> Result<NoteLabel, Error>{
-        query(r#"INSERT INTO notes_labels (note_id, label_id) VALUES (?, ?) RETURNING id, note_id, label_id;"#)
+        query(r#"INSERT INTO notes_labels (note_id, label_id) VALUES ($1, $2) RETURNING id, note_id, label_id;"#)
             .bind(note_id)
             .bind(label_id)
             .map(|row: PgRow| NoteLabel{
