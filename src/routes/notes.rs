@@ -3,7 +3,7 @@ use actix_web::{get, post, put, delete, web,
                 HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::{note::{Note, NewNote}, category::Category};
+use crate::{note::{Note, NewNote}, category::Category, note_label::NoteLabel, note_category::NoteCategory};
 use crate::label::{Label, NewLabel};
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
@@ -129,8 +129,8 @@ pub async fn read_labels_for_note(pool: web::Data<PgPool>, path: web::Path<i32>)
 #[utoipa::path(
     request_body = Note,
     responses(
-        (status = 201, description = "Category updated successfully", body = Note),
-        (status = 404, description = "Category not found", body = Note),
+        (status = 201, description = "Note updated successfully", body = Note),
+        (status = 404, description = "Note not found", body = Note),
     ),
     tag = "notes",
 )]
@@ -159,4 +159,47 @@ pub async fn delete_note(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<
        .await
        .map(|note| HttpResponse::Ok().json(note))
        .map_err(|_| ErrorNotFound("Not found"))
+}
+
+
+#[utoipa::path(
+    params(
+        ("note_id", description = "The id of the note"),
+        ("label_id", description = "The id of the label"),
+    ),
+    responses(
+        (status = 201, description = "Add label note", body = NoteLabel),
+        (status = 400, description = "Bad request", body = NoteLabel),
+    ),
+    tag = "notes",
+)]
+#[put("/notes/{note_id}/labels/{label_id}")]
+pub async fn add_label_to_note(pool: web::Data<PgPool>, path: web::Path<(i32, i32)>)->Result<HttpResponse, Error>{
+    let note_id = path.0;
+    let label_id = path.1;
+    NoteLabel::new(pool, note_id, label_id)
+        .await
+        .map(|note_label| HttpResponse::Ok().json(note_label))
+        .map_err(|_| ErrorBadRequest("Bad Request"))
+}
+
+#[utoipa::path(
+    params(
+        ("note_id", description = "The id of the note"),
+        ("category_id", description = "The id of the category"),
+    ),
+    responses(
+        (status = 201, description = "Add category note", body = NoteCategory),
+        (status = 400, description = "Bad request", body = NoteLabel),
+    ),
+    tag = "notes",
+)]
+#[put("/notes/{note_id}/categories/{category_id}")]
+pub async fn add_category_to_note(pool: web::Data<PgPool>, path: web::Path<(i32, i32)>)->Result<HttpResponse, Error>{
+    let note_id = path.0;
+    let category_id = path.1;
+    NoteCategory::new(pool, note_id, category_id)
+        .await
+        .map(|note_category| HttpResponse::Ok().json(note_category))
+        .map_err(|_| ErrorBadRequest("Bad Request"))
 }
