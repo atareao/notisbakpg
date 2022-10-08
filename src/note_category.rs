@@ -1,8 +1,9 @@
 use actix_web::web;
 use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow}};
 use serde::{Serialize, Deserialize};
+use utoipa::ToSchema;
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct NoteCategory{
     pub id: i32,
