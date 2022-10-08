@@ -90,7 +90,7 @@ async fn main() -> std::io::Result<()> {
         .run(&pool)
         .await.unwrap();
 
-    env_logger::init_from_env(Env::default().default_filter_or("init"));
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     HttpServer::new(move ||{
         App::new()
