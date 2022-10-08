@@ -57,5 +57,17 @@ impl NoteCategory{
             .fetch_one(pool.get_ref())
             .await
     }
+    pub async fn delete(pool: web::Data<PgPool>, note_id: i32, category_id: i32) -> Result<NoteCategory, Error>{
+        query(r#"DELETE FROM notes_categories WHERE note_id = $1 AND category_id = $2 RETURNING id, note_id, category_id;"#)
+            .bind(note_id)
+            .bind(category_id)
+            .map(|row: PgRow| NoteCategory{
+                id: row.get("id"),
+                note_id: row.get("note_id"),
+                category_id: row.get("category_id"),
+            })
+            .fetch_one(pool.get_ref())
+            .await
+    }
 }
 

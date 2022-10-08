@@ -228,3 +228,28 @@ pub async fn add_category_to_note(pool: web::Data<PgPool>, path: web::Path<(i32,
         .map(|note_category| HttpResponse::Ok().json(note_category))
         .map_err(|_| ErrorBadRequest("Bad Request"))
 }
+
+/// Remove a category from note by ids
+///
+/// Deassigned a category from a note
+#[utoipa::path(
+    params(
+        ("note_id", description = "The id of the note"),
+        ("category_id", description = "The id of the category"),
+    ),
+    responses(
+        (status = 201, description = "Add category to note", body = NoteCategory),
+        (status = 400, description = "Bad request", body = NoteCategory),
+    ),
+    tag = "notes",
+)]
+
+#[delete("/notes/{note_id}/categories/{category_id}")]
+pub async fn delete_category_from_note(pool: web::Data<PgPool>, path: web::Path<(i32, i32)>)->Result<HttpResponse, Error>{
+    let note_id = path.0;
+    let category_id = path.1;
+    NoteCategory::delete(pool, note_id, category_id)
+        .await
+        .map(|note_category| HttpResponse::Ok().json(note_category))
+        .map_err(|_| ErrorBadRequest("Bad Request"))
+}

@@ -60,6 +60,7 @@ async fn main() -> std::io::Result<()> {
             routes::notes::add_label_to_note,
             routes::notes::add_category_to_note,
             routes::notes::delete_label_from_note,
+            routes::notes::delete_category_from_note,
         ),
         components(
             schemas(label::Label,
@@ -102,6 +103,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::notes::add_label_to_note)
             .service(routes::notes::add_category_to_note)
             .service(routes::notes::delete_label_from_note)
+            .service(routes::notes::delete_category_from_note)
             .service(routes::categories::create_category)
             .service(routes::categories::read_category)
             .service(routes::categories::read_categories)
