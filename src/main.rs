@@ -7,11 +7,12 @@ mod routes;
 
 use actix_web_httpauth::extractors::basic::{BasicAuth, Config};
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
-use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest};
+use actix_web::{App, HttpServer, web::Data, dev::ServiceRequest, middleware::Logger};
 use dotenv::dotenv;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::{SwaggerUi, Url};
 use std::{env, path::Path};
+use env_logger::Env;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -89,8 +90,12 @@ async fn main() -> std::io::Result<()> {
         .run(&pool)
         .await.unwrap();
 
+    env_logger::init_from_env(Env::default().default_filter_or("init"));
+
     HttpServer::new(move ||{
         App::new()
+            .wrap(Logger::default())
+            .wrap(Logger::new("%a %{User-Agent}i"))
             .app_data(Data::new(pool.clone()))
             .service(routes::notes::root)
             .service(routes::notes::create_note)

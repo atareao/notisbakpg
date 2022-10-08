@@ -20,4 +20,5 @@ rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 utoipa = { version = "2.2", features = ["actix_extras"]}
 utoipa-swagger-ui = { version = "2.0", features = ["actix-web"]}
+env_logger = "0.9"
 bytes = "1.2"
