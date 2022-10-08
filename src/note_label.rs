@@ -72,9 +72,10 @@ impl NoteLabel{
             .await
     }
 
-    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<NoteLabel, Error>{
-        query(r#"DELETE FROM notes_labels WHERE id = ? RETURNING id, note_id, label_id;"#)
-            .bind(id)
+    pub async fn delete(pool: web::Data<PgPool>, note_id: i32, label_id: i32) -> Result<NoteLabel, Error>{
+        query(r#"DELETE FROM notes_labels WHERE note_id = $1 AND label_id = $2 RETURNING id, note_id, label_id;"#)
+            .bind(note_id)
+            .bind(label_id)
             .map(|row: PgRow| NoteLabel{
                 id: row.get("id"),
                 note_id: row.get("note_id"),

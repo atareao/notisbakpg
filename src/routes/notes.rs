@@ -183,6 +183,31 @@ pub async fn add_label_to_note(pool: web::Data<PgPool>, path: web::Path<(i32, i3
         .map_err(|_| ErrorBadRequest("Bad Request"))
 }
 
+/// Remove a label from note by ids
+///
+/// Deassigned a label from a note
+#[utoipa::path(
+    params(
+        ("note_id", description = "The id of the note"),
+        ("label_id", description = "The id of the label"),
+    ),
+    responses(
+        (status = 201, description = "Add label note", body = NoteLabel),
+        (status = 400, description = "Bad request", body = NoteLabel),
+    ),
+    tag = "notes",
+)]
+
+#[delete("/notes/{note_id}/labels/{label_id}")]
+pub async fn delete_label_from_note(pool: web::Data<PgPool>, path: web::Path<(i32, i32)>)->Result<HttpResponse, Error>{
+    let note_id = path.0;
+    let label_id = path.1;
+    NoteLabel::delete(pool, note_id, label_id)
+        .await
+        .map(|note_label| HttpResponse::Ok().json(note_label))
+        .map_err(|_| ErrorBadRequest("Bad Request"))
+}
+
 #[utoipa::path(
     params(
         ("note_id", description = "The id of the note"),
