@@ -49,7 +49,7 @@ impl Note{
     }
 
     pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
-        query(r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
+        query(r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id = $1"#)
             .bind(id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
