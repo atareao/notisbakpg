@@ -8,7 +8,6 @@ use crate::label::{Label, NewLabel};
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;
-use bytes::Bytes;
 
 /// Todo endpoint error responses
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]

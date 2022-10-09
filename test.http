@@ -1,5 +1,13 @@
 GET http://{{NOTISBAK_FQDN}}/
 
+GET http://localhost:8080/roo/
+Authorization: Bearer xxxx
+
+GET http://localhost:8080/notes
+
+
+GET http://localhost:8080/login
+
 
 GET http://{{NOTISBAK_FQDN}}/api-doc/openapi.json
 
