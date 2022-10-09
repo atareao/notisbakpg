@@ -99,12 +99,13 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(Data::new(pool.clone()))
-            .service(web::scope("roo")
-                .wrap(auth)
+            .service(web::scope("auth")
+                .wrap(auth.clone())
                 .service(routes::notes::root)
                 )
             .service(
                 web::scope("")
+                .service(routes::notes::root)
                 .service(routes::notes::create_note)
                 .service(routes::notes::read_note)
                 .service(routes::notes::read_notes)
@@ -125,11 +126,14 @@ async fn main() -> std::io::Result<()> {
                 .service(routes::labels::read_label)
                 .service(routes::labels::read_labels)
                 .service(routes::labels::update_label)
-                .service(routes::labels::delete_label))
-                .service(SwaggerUi::new("/swagger-ui/{_:.*}").urls(vec![
-                    (Url::new("api1", "/api-doc/openapi1.json"),
-                     ApiDoc::openapi()),
-                ]))
+                .service(routes::labels::delete_label)
+            )
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}")
+                .urls(vec![
+                (Url::new("api1", "/api-doc/openapi1.json"),
+                 ApiDoc::openapi()),
+            ]))
     })
     .bind(format!("0.0.0.0:{}", &port))
     .unwrap()
@@ -138,13 +142,10 @@ async fn main() -> std::io::Result<()> {
 }
 
 async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<ServiceRequest, (Error, ServiceRequest)>{
-    if req.path() == "/login" || req.path() == "/register"{
-        return Ok(req);
-    }
     eprint!("{}", req.path());
     eprint!("{:?}", req);
     println!("Estoy aqui");
-    eprint!("{}", credentials.token());
+    eprintln!("{}", credentials.token());
     eprintln!("BearerAuth {:?}", credentials);
     Ok(req)
 }

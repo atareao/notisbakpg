@@ -1,9 +1,10 @@
 GET http://{{NOTISBAK_FQDN}}/
 
 GET http://localhost:8080/roo/
+Accept: application/json
 Authorization: Bearer xxxx
 
-GET http://localhost:8080/notes
+GET http://localhost:8080/api/v1/notes
 
 
 GET http://localhost:8080/login
