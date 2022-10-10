@@ -5,9 +5,18 @@ use jsonwebtoken::{encode, Header, EncodingKey};
 
 use crate::user::{Credentials, User};
 
-#[derive(Serialize, Deserialize)]
-struct Claims {
-    sub: String,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+}
+impl Claims{
+    pub fn new(index: i32)-> Self{
+        Self{
+            sub: index.to_string(),
+            exp: usize::try_from(jsonwebtoken::get_current_timestamp()).unwrap() + 50000,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -23,7 +32,7 @@ pub async fn login(pool: web::Data<PgPool>, credentials: web::Json<Credentials>)
     let user = User::get_by_email(pool, &credentials.email).await.unwrap();
     let password = format!("{:x}", md5::compute(&credentials.password));
     if user.password == password{
-        let claims = Claims{ sub: user.id.to_string()};
+        let claims = Claims::new(user.id);
         let token = encode(&Header::default(), &claims, &EncodingKey::from_secret("SECRETO".as_ref())).unwrap();
         return Ok(HttpResponse::Ok().json(Response{
             code: "Ok".to_string(),
@@ -39,7 +48,7 @@ pub async fn register(pool: web::Data<PgPool>, credentials: web::Json<Credential
     let user = User::new(pool, credentials.into_inner())
         .await
         .unwrap();
-        let claims = Claims{ sub: user.id.to_string()};
+        let claims = Claims::new(user.id);
         let token = encode(&Header::default(), &claims, &EncodingKey::from_secret("SECRETO".as_ref())).unwrap();
         return Ok(HttpResponse::Created().json(Response{
             code: "Ok".to_string(),
