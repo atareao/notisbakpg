@@ -1,4 +1,4 @@
-use actix_web::{post, web, Error, HttpResponse};
+use actix_web::{post, web, Error, HttpResponse, HttpRequest};
 use serde::{Serialize, Deserialize};
 use sqlx::PgPool;
 use jsonwebtoken::{encode, Header, EncodingKey};
@@ -27,11 +27,13 @@ struct Response{
 }
 
 
-#[post("/users/login")]
-pub async fn login(pool: web::Data<PgPool>, credentials: web::Json<Credentials>) -> Result<HttpResponse, Error>{
-    let user = User::get_by_email(pool, &credentials.email).await.unwrap();
+#[post("/login")]
+pub async fn login(req: HttpRequest, pool: web::Data<PgPool>, credentials: web::Json<Credentials>) -> Result<HttpResponse, Error>{
+    println!("{:?}", req);
+    let user = User::get_by_email(&pool, &credentials.email).await.unwrap();
     let password = format!("{:x}", md5::compute(&credentials.password));
     if user.password == password{
+        User::set_login(&pool, user.id, true).await.unwrap();
         let claims = Claims::new(user.id);
         let token = encode(&Header::default(), &claims, &EncodingKey::from_secret("SECRETO".as_ref())).unwrap();
         return Ok(HttpResponse::Ok().json(Response{
@@ -43,9 +45,10 @@ pub async fn login(pool: web::Data<PgPool>, credentials: web::Json<Credentials>)
     Err(actix_web::error::ErrorUnauthorized("Invalid credentials".to_string()))
 }
 
-#[post("/users/register")]
-pub async fn register(pool: web::Data<PgPool>, credentials: web::Json<Credentials>) -> Result<HttpResponse, Error>{
-    let user = User::new(pool, credentials.into_inner())
+#[post("/register")]
+pub async fn register(req: HttpRequest, pool: web::Data<PgPool>, credentials: web::Json<Credentials>) -> Result<HttpResponse, Error>{
+    println!("{:?}", req);
+    let user = User::new(&pool, credentials.into_inner())
         .await
         .unwrap();
         let claims = Claims::new(user.id);
@@ -56,3 +59,5 @@ pub async fn register(pool: web::Data<PgPool>, credentials: web::Json<Credential
             token: Some(token),
         }));
 }
+
+
