@@ -102,7 +102,8 @@ async fn main() -> std::io::Result<()> {
                 .service(routes::notes::root)
             )
             .service(web::scope("auth")
-                .service(routes::notes::root)
+                .service(routes::users::login)
+                .service(routes::users::register)
             )
             .service(
                 web::scope("api")
