@@ -14,6 +14,7 @@ use utoipa_swagger_ui::{SwaggerUi, Url};
 use std::{env, path::Path};
 use env_logger::Env;
 use actix_web_httpauth::extractors::bearer::BearerAuth;
+use jsonwebtoken::{decode, decode_header, Validation, DecodingKey};
 
 
 #[actix_web::main]
@@ -74,9 +75,6 @@ async fn main() -> std::io::Result<()> {
                     note::NewNote,
                     note::UpdateNote)
         ),
-        tags(
-            (name = "todo", description = "Todo management endpoints.")
-        ),
     )]
     struct ApiDoc;
 
@@ -99,12 +97,15 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(Data::new(pool.clone()))
-            .service(web::scope("auth")
+            .service(web::scope("test")
                 .wrap(auth.clone())
                 .service(routes::notes::root)
-                )
+            )
+            .service(web::scope("auth")
+                .service(routes::notes::root)
+            )
             .service(
-                web::scope("")
+                web::scope("api")
                 .service(routes::notes::root)
                 .service(routes::notes::create_note)
                 .service(routes::notes::read_note)
@@ -127,13 +128,16 @@ async fn main() -> std::io::Result<()> {
                 .service(routes::labels::read_labels)
                 .service(routes::labels::update_label)
                 .service(routes::labels::delete_label)
+                .service(routes::users::login)
+                .service(routes::users::register)
             )
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
-                .urls(vec![
-                (Url::new("api1", "/api-doc/openapi1.json"),
-                 ApiDoc::openapi()),
-            ]))
+                    .urls(vec![
+                        (Url::new("api1", "/api-doc/openapi1.json"),
+                        ApiDoc::openapi()),
+                    ])
+            )
     })
     .bind(format!("0.0.0.0:{}", &port))
     .unwrap()
@@ -146,6 +150,11 @@ async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<Servi
     eprint!("{:?}", req);
     println!("Estoy aqui");
     eprintln!("{}", credentials.token());
+    let decoded = decode::<routes::users::Claims>(credentials.token(), &DecodingKey::from_secret("SECRETO".as_ref()), &Validation::default());
+    let header = decode_header(credentials.token()).unwrap();
+    let jwt = header.jwk;
     eprintln!("BearerAuth {:?}", credentials);
+    eprintln!("BearerAuth {:?}", decoded);
+    eprintln!("decoded {:?}", jwt);
     Ok(req)
 }
