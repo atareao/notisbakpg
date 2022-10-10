@@ -5,5 +5,6 @@ CREATE TABLE IF NOT EXISTS users(
     password TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
+    login BOOLEAN NOT NULL DEFAULT FALSE,
     UNIQUE (email)
 );
