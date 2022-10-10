@@ -1,4 +1,4 @@
-POST http://localhost:{{PORT}}/auth/register
+POST http://{{TEST_FQDN}}/auth/register
 Content-Type: application/json
 
 {
@@ -6,7 +6,7 @@ Content-Type: application/json
     "password": "{{PASSWORD}}"
 }
 
-POST http://localhost:{{PORT}}/auth/login
+POST http://{{TEST_FQDN}}/auth/login
 Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
@@ -36,22 +36,22 @@ Content-Type: application/json
 }
 
 
-GET http://{{NOTISBAK_FQDN}}/
+GET https://{{NOTISBAK_FQDN}}/
 
-GET http://{{NOTISBAK_FQDN}}/api-doc/openapi.json
+GET https://{{NOTISBAK_FQDN}}/api-doc/openapi.json
 
-GET http://{{NOTISBAK_FQDN}}/swagger-ui/
+GET https://{{NOTISBAK_FQDN}}/swagger-ui/
 
-GET http://{{NOTISBAK_FQDN}}/notes
+GET https://{{NOTISBAK_FQDN}}/notes
 
-POST http://{{NOTISBAK_FQDN}}/notes
+POST https://{{NOTISBAK_FQDN}}/notes
 Content-Type: application/json
 
 {
     "title": "Nota 2"
 }
 
-PUT http://{{NOTISBAK_FQDN}}/notes
+PUT https://{{NOTISBAK_FQDN}}/notes
 Content-Type: application/json
 
 {
@@ -60,20 +60,20 @@ Content-Type: application/json
     "body": "cosa rara"
 }
 
-DELETE http://{{NOTISBAK_FQDN}}/notes/5
+DELETE https://{{NOTISBAK_FQDN}}/notes/5
 
-GET http://{{NOTISBAK_FQDN}}/categories
+GET https://{{NOTISBAK_FQDN}}/categories
 
-POST http://{{NOTISBAK_FQDN}}/categories
+POST https://{{NOTISBAK_FQDN}}/categories
 Content-Type: application/json
 
 {
     "name": "Categoria 1"
 }
 
-GET http://{{NOTISBAK_FQDN}}/labels
+GET https://{{NOTISBAK_FQDN}}/labels
 
-POST http://{{NOTISBAK_FQDN}}/labels
+POST https://{{NOTISBAK_FQDN}}/labels
 Content-Type: application/json
 
 {
