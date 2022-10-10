@@ -12,6 +12,7 @@ pub struct User{
     pub password: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    pub login: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,20 +24,21 @@ pub struct Credentials{
 
 impl User{
     pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<User>, Error>{
-        query(r#"SELECT id, email, password, created_at, updated_at FROM users"#)
+        query(r#"SELECT id, email, password, created_at, updated_at, login FROM users"#)
             .map(|row: PgRow| User{
                 id: row.get("id"),
                 email: row.get("email"),
                 password: row.get("password"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
+                login: row.get("login"),
             })
             .fetch_all(pool.get_ref())
             .await
     }
 
     pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<User, Error>{
-        query(r#"SELECT id, email, password, created_at, updated_at FROM users WHERE id = $1"#)
+        query(r#"SELECT id, email, password, created_at, updated_at, login FROM users WHERE id = $1"#)
             .bind(id)
             .map(|row: PgRow| User{
                 id: row.get("id"),
@@ -44,13 +46,14 @@ impl User{
                 password: row.get("body"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
+                login: row.get("login"),
             })
             .fetch_one(pool.get_ref())
             .await
     }
 
     pub async fn get_by_email(pool: web::Data<PgPool>, email: &str) -> Result<User, Error>{
-        query(r#"SELECT id, email, password, created_at, updated_at FROM users WHERE email = $1"#)
+        query(r#"SELECT id, email, password, created_at, updated_at, login FROM users WHERE email = $1"#)
             .bind(email)
             .map(|row: PgRow| User{
                 id: row.get("id"),
@@ -58,6 +61,7 @@ impl User{
                 password: row.get("body"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
+                login: row.get("login"),
             })
             .fetch_one(pool.get_ref())
             .await
@@ -68,17 +72,20 @@ impl User{
         let password = format!("{:x}", md5::compute(credentials.password));
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
-        query(r#"INSERT INTO users (email, password, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, email, password, created_at, updated_at;"#,)
+        let login = false;
+        query(r#"INSERT INTO users (email, password, created_at, updated_at, login) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, password, created_at, updated_at login;"#,)
             .bind(email)
             .bind(password)
             .bind(created_at)
             .bind(updated_at)
+            .bind(login)
             .map(|row: PgRow| User{
                 id: row.get("id"),
                 email: row.get("email"),
                 password: row.get("password"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
+                login: row.get("login"),
             })
             .fetch_one(pool.get_ref())
             .await
