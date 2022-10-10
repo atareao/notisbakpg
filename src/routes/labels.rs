@@ -7,12 +7,13 @@ use crate::label::{Label, NewLabel};
 use serde_json::Value;
 
 #[utoipa::path(
+    context_path = "/api",
     responses(
         (status = 200, description = "List all labels", body = [Label])
     ),
     tag  = "labels"
 )]
-#[get("/labels")]
+#[get("/v1/labels")]
 pub async fn read_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
     Label::all(pool)
        .await
@@ -21,13 +22,14 @@ pub async fn read_labels(pool: web::Data<PgPool>) -> Result<HttpResponse, Error>
 }
 
 #[utoipa::path(
+    context_path = "/api",
     request_body = NewLabel,
     responses(
         (status = 201, description = "Label created successfully", body = NewLabel),
     ),
     tag  = "labels"
 )]
-#[post("/labels")]
+#[post("/v1/labels")]
 pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
     let content: Value = serde_json::from_str(&body).unwrap();
     let name = content.get("name").as_ref().unwrap().as_str().unwrap();
@@ -38,6 +40,7 @@ pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpR
 }
 
 #[utoipa::path(
+    context_path = "/api",
     params(
         ("id", description = "The id of the label"),
     ),
@@ -46,7 +49,7 @@ pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpR
     ),
     tag  = "labels"
 )]
-#[get("/labels/{id}")]
+#[get("/v1/labels/{id}")]
 pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let id = path.into_inner();
     Label::get(pool, id)
@@ -56,13 +59,14 @@ pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<H
 }
 
 #[utoipa::path(
+    context_path = "/api",
     request_body = Label,
     responses(
         (status = 201, description = "Label updated successfully", body = Label),
     ),
     tag  = "labels"
 )]
-#[put("/labels")]
+#[put("/v1/labels")]
 pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>) -> Result<HttpResponse, Error>{
     Label::update(pool, label.into_inner())
        .await
@@ -71,6 +75,7 @@ pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>) -> R
 }
 
 #[utoipa::path(
+    context_path = "/api",
     params(
         ("id", description = "The id of the label"),
     ),
@@ -79,7 +84,7 @@ pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>) -> R
     ),
     tag  = "labels"
 )]
-#[delete("/labels/{id}")]
+#[delete("/v1/labels/{id}")]
 pub async fn delete_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
     let id = path.into_inner();
     Label::delete(pool, id)
