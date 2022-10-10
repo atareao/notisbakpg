@@ -1,3 +1,20 @@
+POST http://localhost:{{PORT}}/auth/register
+Content-Type: application/json
+
+{
+    "email": "{{EMAIL}}",
+    "password": "{{PASSWORD}}"
+}
+
+POST http://localhost:{{PORT}}/auth/login
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+    "email": "{{EMAIL}}",
+    "password": "{{PASSWORD}}"
+}
+
 GET http://localhost:8080/auth/
 Accept: application/json
 Authorization: Bearer {{TOKEN}}
