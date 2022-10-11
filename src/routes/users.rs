@@ -1,4 +1,4 @@
-use actix_web::{post, web, Error, HttpResponse, HttpRequest};
+use actix_web::{post, get, web, Error, HttpResponse, HttpRequest};
 use serde::{Serialize, Deserialize};
 use sqlx::PgPool;
 use jsonwebtoken::{encode, Header, EncodingKey};
@@ -58,6 +58,17 @@ pub async fn register(req: HttpRequest, pool: web::Data<PgPool>, credentials: we
             message: "User created".to_string(),
             token: Some(token),
         }));
+}
+
+
+#[get("/validate")]
+pub async fn validate(req: HttpRequest, pool: web::Data<PgPool>) -> Result<HttpResponse, Error>{
+    println!("{:?}", req);
+    return Ok(HttpResponse::Created().json(Response{
+        code: "Ok".to_string(),
+        message: "User created".to_string(),
+        token: Some("algo".to_string()),
+    }));
 }
 
 
