@@ -5,6 +5,7 @@ mod category;
 mod note_label;
 mod note_category;
 mod routes;
+mod utils;
 
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::{self, Data}, dev::ServiceRequest, middleware::Logger, Error};
@@ -104,6 +105,10 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("auth")
                 .service(routes::users::login)
                 .service(routes::users::register)
+                .service(web::scope("")
+                    .wrap(auth.clone())
+                    .service(routes::users::validate)
+                )
             )
             .service(
                 web::scope("api")
