@@ -19,7 +19,14 @@ GET http://localhost:8080/auth/
 Accept: application/json
 Authorization: Bearer {{TOKEN}}
 
+GET http://localhost:8080/auth/validate
+Authorization: Bearer {{TOKEN}}
+
 GET http://localhost:8080/api/v1/notes
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+GET http://localhost:8080/api/v1/labels
 Accept: application/json
 Authorization: Bearer {{TOKEN}}
 
