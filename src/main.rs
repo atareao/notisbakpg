@@ -4,6 +4,7 @@ mod label;
 mod category;
 mod note_label;
 mod note_category;
+mod user_label;
 mod routes;
 mod claims;
 
