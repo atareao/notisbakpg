@@ -18,8 +18,14 @@ pub struct NewLabel{
 }
 
 impl Label{
-    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Label>, Error>{
-        query(r#"SELECT id, name FROM labels"#)
+    pub async fn all(pool: web::Data<PgPool>, user_id: i32) -> Result<Vec<Label>, Error>{
+        let sql = r#"SELECT id, name
+        FROM labels l
+        INNER JOIN users_labels ul ON l.id = ul.label_id 
+        WHERE user_id = $1
+        "#;
+        query(sql)
+            .bind(user_id)
             .map(|row: PgRow| Label{
                 id: row.get("id"),
                 name: row.get("name"),
@@ -28,9 +34,15 @@ impl Label{
             .await
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Label, Error>{
-        query(r#"SELECT id, name FROM labels WHERE id=$1"#)
+    pub async fn get(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Label, Error>{
+        let sql = r#"SELECT id, name
+        FROM labels l
+        INNER JOIN users_labels ul ON l.id = ul.label_id 
+        WHERE l.id = $1 AND user_id = $2
+        "#;
+        query(sql)
             .bind(id)
+            .bind(user_id)
             .map(|row: PgRow| Label{
                 id: row.get("id"),
                 name: row.get("name"),
