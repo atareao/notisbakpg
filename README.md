@@ -45,13 +45,13 @@ sqlx database drop
 In order to create migrations,
 
 ```
-sqls migrate add <name>
+sqlx migrate add <name>
 ```
 
 And if you want to create a migration with revert,
 
 ```
-sqls migrate add -r <name>
+sqlx migrate add -r <name>
 ```
 
 To run a migration,
