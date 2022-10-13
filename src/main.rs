@@ -5,7 +5,7 @@ mod category;
 mod note_label;
 mod note_category;
 mod routes;
-mod utils;
+mod claims;
 
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::{self, Data}, dev::ServiceRequest, middleware::Logger, Error};

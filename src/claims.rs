@@ -16,15 +16,29 @@ impl Claims{
             .expect("EXPIRATION not set")
             .parse()
             .unwrap();
+        let exp = usize::try_from(
+            jsonwebtoken::get_current_timestamp()).unwrap() + expiration;
         Self{
             sub: index.to_string(),
-            exp: usize::try_from(jsonwebtoken::get_current_timestamp()).unwrap() + expiration,
+            exp,
         }
     }
     pub fn get_token(&self) -> Result<String, std::io::Error>{
         let secret = env::var("SECRET").unwrap();
-        Ok(encode(&Header::default(), &self, &EncodingKey::from_secret(secret.as_ref())).unwrap())
-
+        Ok(encode(
+            &Header::default(),
+            &self,
+            &EncodingKey::from_secret(secret.as_ref())).unwrap()
+        )
+    }
+    pub fn get_index(credentials: BearerAuth) -> Result<i32, std::io::Error>{
+        let secret = env::var("SECRET").unwrap();
+        let decoded = decode::<Claims>(
+            credentials.token(),
+            &DecodingKey::from_secret(secret.as_bytes()),
+            &Validation::default()
+        );
+        Ok(decoded.unwrap().claims.sub.parse().unwrap())
     }
 }
 

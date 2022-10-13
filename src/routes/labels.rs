@@ -4,7 +4,7 @@ use actix_web::{get, post, put, delete, web,
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::{label::{Label, NewLabel}, utils::test};
+use crate::{label::{Label, NewLabel}, claims::Claims};
 use serde_json::Value;
 
 #[utoipa::path(
@@ -17,7 +17,8 @@ use serde_json::Value;
 #[get("/v1/labels")]
 pub async fn read_labels(pool: web::Data<PgPool>, credentials: BearerAuth) -> Result<HttpResponse, Error>{
     eprintln!("{}", credentials.token());
-    test(credentials);
+    let index = Claims::get_index(credentials).unwrap();
+    println!("Index: {}", index);
     Label::all(pool)
        .await
        .map(|some_labels| HttpResponse::Ok().json(some_labels))
