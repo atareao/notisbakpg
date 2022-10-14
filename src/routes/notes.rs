@@ -3,8 +3,9 @@ use actix_web::{get, post, put, delete, web,
                 HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::{note::{Note, NewNote}, category::Category, note_label::NoteLabel, note_category::NoteCategory};
-use crate::label::{Label, NewLabel};
+use crate::model::{note::{Note, NewNote}, category::Category,
+    note_label::NoteLabel, note_category::NoteCategory, label::{Label, 
+        NewLabel}};
 use serde_json::Value;
 use serde::{Serialize, Deserialize};
 use utoipa::ToSchema;

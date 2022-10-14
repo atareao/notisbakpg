@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use sqlx::PgPool;
 use jsonwebtoken::{encode, Header, EncodingKey};
 
-use crate::user::{Credentials, User};
+use crate::model::user::{Credentials, User};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

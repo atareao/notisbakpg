@@ -11,6 +11,13 @@ pub struct Label{
     pub name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LabelWU{
+    pub id: i32,
+    pub name: String,
+    pub user_id: i32,
+}
+
 #[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct NewLabel{
     #[schema(example = "etiqueta 1")]
@@ -21,7 +28,6 @@ impl Label{
     pub async fn all(pool: web::Data<PgPool>, user_id: i32) -> Result<Vec<Label>, Error>{
         let sql = r#"SELECT id, name
         FROM labels l
-        INNER JOIN users_labels ul ON l.id = ul.label_id 
         WHERE user_id = $1
         "#;
         query(sql)
@@ -37,7 +43,6 @@ impl Label{
     pub async fn get(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Label, Error>{
         let sql = r#"SELECT id, name
         FROM labels l
-        INNER JOIN users_labels ul ON l.id = ul.label_id 
         WHERE l.id = $1 AND user_id = $2
         "#;
         query(sql)
@@ -62,7 +67,7 @@ impl Label{
             .await
     }
 
-    pub async fn new(pool: web::Data<PgPool>, name: &str) -> Result<Label, Error>{
+    pub async fn new(pool: &web::Data<PgPool>, name: &str) -> Result<Label, Error>{
         query(r#"INSERT INTO labels (name) VALUES ($1) RETURNING id, name;"#)
             .bind(name)
             .map(|row: PgRow| Label{

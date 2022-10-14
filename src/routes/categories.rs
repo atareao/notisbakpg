@@ -2,7 +2,7 @@ use actix_web::{get, post, put, delete, web, error::ErrorNotFound, Error,
                 HttpResponse};
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::category::{Category, NewCategory};
+use crate::model::category::{Category, NewCategory};
 
 #[utoipa::path(
     request_body = NewCategory,

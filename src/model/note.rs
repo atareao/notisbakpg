@@ -4,7 +4,7 @@ use actix_web::web;
 use chrono::{NaiveDateTime, Utc};
 use sqlx::{query, FromRow, Error, Row, postgres::{PgPool, PgRow, PgQueryResult}};
 use serde::{Serialize, Deserialize};
-use crate::{label::Label, category::Category};
+use crate::model::{label::Label, category::Category};
 use serde_json::Value;
 use utoipa::ToSchema;
 

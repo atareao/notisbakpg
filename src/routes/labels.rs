@@ -4,7 +4,7 @@ use actix_web::{get, post, put, delete, web,
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::{label::{Label, NewLabel}, claims::Claims};
+use crate::model::{label::{Label, NewLabel}, claims::Claims, user_label::UserLabel};
 use serde_json::Value;
 
 #[utoipa::path(
@@ -17,9 +17,8 @@ use serde_json::Value;
 #[get("/v1/labels")]
 pub async fn read_labels(pool: web::Data<PgPool>, credentials: BearerAuth) -> Result<HttpResponse, Error>{
     eprintln!("{}", credentials.token());
-    let index = Claims::get_index(credentials).unwrap();
-    println!("Index: {}", index);
-    Label::all(pool)
+    let user_id = Claims::get_index(credentials).unwrap();
+    Label::all(pool, user_id)
        .await
        .map(|some_labels| HttpResponse::Ok().json(some_labels))
        .map_err(|_| ErrorNotFound("Not found"))
@@ -34,13 +33,19 @@ pub async fn read_labels(pool: web::Data<PgPool>, credentials: BearerAuth) -> Re
     tag  = "labels"
 )]
 #[post("/v1/labels")]
-pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpResponse, Error>{
+pub async fn create_label(pool: web::Data<PgPool>, body: String, credentials: BearerAuth) -> Result<HttpResponse, Error>{
     let content: Value = serde_json::from_str(&body).unwrap();
     let name = content.get("name").as_ref().unwrap().as_str().unwrap();
-    Label::new(pool, name)
-       .await
-       .map(|label| HttpResponse::Ok().json(label))
-       .map_err(|_| ErrorNotFound("Not found"))
+    let user_id = Claims::get_index(credentials).unwrap();
+    match Label::new(&pool, name).await{
+        Ok(label) => {
+            match UserLabel::new(&pool, user_id, label.id).await{
+                Ok(_) => Ok(HttpResponse::Created().json(label)),
+                Err(_) => Err(ErrorNotFound("Not found")),
+            }
+        },
+        Err(_) => Err(ErrorNotFound("Not found")),
+    }
 }
 
 #[utoipa::path(
@@ -54,9 +59,10 @@ pub async fn create_label(pool: web::Data<PgPool>, body: String) -> Result<HttpR
     tag  = "labels"
 )]
 #[get("/v1/labels/{id}")]
-pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>)->Result<HttpResponse, Error>{
+pub async fn read_label(pool: web::Data<PgPool>, path: web::Path<i32>, credentials: BearerAuth)->Result<HttpResponse, Error>{
     let id = path.into_inner();
-    Label::get(pool, id)
+    let user_id = Claims::get_index(credentials).unwrap();
+    Label::get(pool, id, user_id)
        .await
        .map(|label| HttpResponse::Ok().json(label))
        .map_err(|_| ErrorNotFound("Not found"))

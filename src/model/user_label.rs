@@ -35,7 +35,7 @@ impl UserLabel{
             .await
     }
 
-    pub async fn new(pool: web::Data<PgPool>, user_id: i32, label_id: i32) -> Result<UserLabel, Error>{
+    pub async fn new(pool: &web::Data<PgPool>, user_id: i32, label_id: i32) -> Result<UserLabel, Error>{
         query(r#"INSERT INTO users_labels (user_id, label_id) VALUES ($1, $2) RETURNING id, user_id, label_id;"#)
             .bind(user_id)
             .bind(label_id)

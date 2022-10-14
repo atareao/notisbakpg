@@ -1,12 +1,5 @@
-mod user;
-mod note;
-mod label;
-mod category;
-mod note_label;
-mod note_category;
-mod user_label;
 mod routes;
-mod claims;
+mod model;
 
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
 use actix_web::{App, HttpServer, web::{self, Data}, dev::ServiceRequest, middleware::Logger, Error};
@@ -69,13 +62,13 @@ async fn main() -> std::io::Result<()> {
             routes::notes::delete_category_from_note,
         ),
         components(
-            schemas(label::Label,
-                    label::NewLabel,
-                    category::Category,
-                    category::NewCategory,
-                    note::Note,
-                    note::NewNote,
-                    note::UpdateNote)
+            schemas(model::label::Label,
+                    model::label::NewLabel,
+                    model::category::Category,
+                    model::category::NewCategory,
+                    model::note::Note,
+                    model::note::NewNote,
+                    model::note::UpdateNote)
         ),
     )]
     struct ApiDoc;
