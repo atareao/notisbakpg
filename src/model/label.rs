@@ -67,9 +67,10 @@ impl Label{
             .await
     }
 
-    pub async fn new(pool: &web::Data<PgPool>, name: &str) -> Result<Label, Error>{
-        query(r#"INSERT INTO labels (name) VALUES ($1) RETURNING id, name;"#)
+    pub async fn new(pool: &web::Data<PgPool>, name: &str, user_id: i32) -> Result<Label, Error>{
+        query(r#"INSERT INTO labels (name, user_id) VALUES ($1, $2) RETURNING id, name;"#)
             .bind(name)
+            .bind(user_id)
             .map(|row: PgRow| Label{
                 id: row.get("id"),
                 name: row.get("name"),

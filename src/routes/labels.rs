@@ -1,18 +1,23 @@
-use actix_web::{get, post, put, delete, web,
-                error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse,
-                HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
+use actix_web::{get, post, put, delete, web, error::ErrorNotFound,  Error,
+    HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::model::{label::{Label, NewLabel}, claims::Claims, user_label::UserLabel};
+use crate::model::{label::Label, claims::Claims, user_label::UserLabel};
 use serde_json::Value;
 
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "List all labels", body = [Label])
+        (status = 200, description = "List all labels", body = [Label]),
+        (status = 401, description = "Error: Unauthorized")
     ),
-    tag  = "labels"
+    tag  = "labels",
+    security(
+        (),
+        ("my_auth" = ["read:items"]),
+        ("token_jwt" = [])
+    )
 )]
 #[get("/v1/labels")]
 pub async fn read_labels(pool: web::Data<PgPool>, credentials: BearerAuth) -> Result<HttpResponse, Error>{
@@ -37,7 +42,7 @@ pub async fn create_label(pool: web::Data<PgPool>, body: String, credentials: Be
     let content: Value = serde_json::from_str(&body).unwrap();
     let name = content.get("name").as_ref().unwrap().as_str().unwrap();
     let user_id = Claims::get_index(credentials).unwrap();
-    match Label::new(&pool, name).await{
+    match Label::new(&pool, name, user_id).await{
         Ok(label) => {
             match UserLabel::new(&pool, user_id, label.id).await{
                 Ok(_) => Ok(HttpResponse::Created().json(label)),

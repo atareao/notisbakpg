@@ -2,14 +2,17 @@ mod routes;
 mod model;
 
 use sqlx::{postgres::PgPoolOptions, migrate::{Migrator, MigrateDatabase}};
-use actix_web::{App, HttpServer, web::{self, Data}, dev::ServiceRequest, middleware::Logger, Error};
+use actix_web::{App, HttpServer, web::{self, Data}, dev::ServiceRequest,
+    middleware::Logger, Error};
 use dotenv::dotenv;
-use utoipa::OpenApi;
+use utoipa::{OpenApi, Modify, openapi};
 use utoipa_swagger_ui::{SwaggerUi, Url};
 use std::{env, path::Path};
 use env_logger::Env;
-use actix_web_httpauth::extractors::bearer::BearerAuth;
+use actix_web_httpauth::{extractors::bearer::BearerAuth,
+    middleware::HttpAuthentication};
 use jsonwebtoken::{decode, decode_header, Validation, DecodingKey};
+use openapi::security::{SecurityScheme, HttpBuilder, HttpAuthScheme};
 
 
 #[actix_web::main]
@@ -37,6 +40,7 @@ async fn main() -> std::io::Result<()> {
 
 
     #[derive(OpenApi)]
+    #[openapi(modifiers(&SecurityAddon))]
     #[openapi(
         paths(
             routes::labels::create_label,
@@ -73,6 +77,26 @@ async fn main() -> std::io::Result<()> {
     )]
     struct ApiDoc;
 
+    struct SecurityAddon;
+
+    impl Modify for SecurityAddon{
+        fn modify(&self, openapi: & mut utoipa::openapi::OpenApi){
+            openapi.components = Some(
+                utoipa::openapi::ComponentsBuilder::new()
+                    .security_scheme(
+                        "api_jwt_token",
+                        SecurityScheme::Http(
+                            HttpBuilder::new()
+                                .scheme(HttpAuthScheme::Bearer)
+                                .bearer_format("JWT")
+                                .build(),
+                        ),
+                    )
+                    .build(),
+            )
+        }
+    }
+
     let pool = PgPoolOptions::new()
         .max_connections(4)
         .connect(&db_url)
@@ -88,7 +112,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     HttpServer::new(move ||{
-        let auth = actix_web_httpauth::middleware::HttpAuthentication::bearer(validator);
+        let auth = HttpAuthentication::bearer(validator);
         App::new()
             .wrap(Logger::default())
             .app_data(Data::new(pool.clone()))
@@ -139,6 +163,7 @@ async fn main() -> std::io::Result<()> {
                     ])
             )
     })
+    .workers(2)
     .bind(format!("0.0.0.0:{}", &port))
     .unwrap()
     .run()
@@ -150,7 +175,9 @@ async fn validator(req: ServiceRequest, credentials: BearerAuth) -> Result<Servi
     eprint!("{:?}", req);
     println!("Estoy aqui");
     eprintln!("{}", credentials.token());
-    let decoded = decode::<routes::users::Claims>(credentials.token(), &DecodingKey::from_secret("SECRETO".as_ref()), &Validation::default());
+    let decoded = decode::<routes::users::Claims>(credentials.token(),
+        &DecodingKey::from_secret("SECRETO".as_ref()),
+        &Validation::default());
     let header = decode_header(credentials.token()).unwrap();
     let jwt = header.jwk;
     eprintln!("BearerAuth {:?}", credentials);
