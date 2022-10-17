@@ -11,15 +11,26 @@ pub struct Category{
     pub name: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CategoryWU{
+    pub id: i32,
+    pub name: String,
+    pub user_id: i32,
+}
 #[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct NewCategory{
-    #[schema(example = "categoria 1")]
+    #[schema(example = "categoría 1")]
     pub name: String,
 }
 
 impl Category{
-    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Category>, Error>{
-        query(r#"SELECT id, name FROM categories"#)
+    pub async fn all(pool: web::Data<PgPool>, user_id: i32) -> Result<Vec<Category>, Error>{
+        let sql = r#"SELECT id, name
+        FROM categories
+        WHERE user_id = $1
+        "#;
+        query(sql)
+            .bind(user_id)
             .map(|row: PgRow| Category{
                 id: row.get("id"),
                 name: row.get("name"),
@@ -28,9 +39,14 @@ impl Category{
             .await
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Category, Error>{
-        query(r#"SELECT id, name FROM categories WHERE id=$1"#)
+    pub async fn get(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Category, Error>{
+        let sql = r#"SELECT id, name
+        FROM categories
+        WHERE id = $1 AND user_id = $2
+        "#;
+        query(sql)
             .bind(id)
+            .bind(user_id)
             .map(|row: PgRow| Category{
                 id: row.get("id"),
                 name: row.get("name"),
@@ -39,9 +55,10 @@ impl Category{
             .await
     }
 
-    pub async fn new(pool: web::Data<PgPool>, name: &str) -> Result<Category, Error>{
-        query(r#"INSERT INTO categories (name) VALUES ($1) RETURNING id, name;"#)
+    pub async fn new(pool: web::Data<PgPool>, name: &str, user_id: i32) -> Result<Category, Error>{
+        query(r#"INSERT INTO categories (name, user_id) VALUES ($1, $2) RETURNING id, name;"#)
             .bind(name)
+            .bind(user_id)
             .map(|row: PgRow| Category{
                 id: row.get("id"),
                 name: row.get("name"),

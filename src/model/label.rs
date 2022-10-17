@@ -80,7 +80,7 @@ impl Label{
     }
 
     pub async fn update(pool: web::Data<PgPool>, label: Label) -> Result<Label, Error>{
-        query(r#"UPDATE labels SET name = $1 WHERE id = $2 RETURNING id, name;"#)
+        query(r#"UPDATE labels SET name = $2 WHERE id = $1 RETURNING id, name;"#)
             .bind(label.id)
             .bind(label.name)
             .map(|row: PgRow| Label{

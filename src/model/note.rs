@@ -22,6 +22,18 @@ pub struct Note{
 }
 
 #[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
+pub struct NoteWU{
+    pub id: i32,
+    #[schema(example = "Titulo")]
+    pub title: String,
+    #[schema(example = "Contenido")]
+    pub body: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+    pub user_id: i32,
+}
+
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 pub struct NewNote{
     pub title: String,
     pub body: Option<String>,
@@ -35,8 +47,9 @@ pub struct UpdateNote{
 }
 
 impl Note{
-    pub async fn all(pool: web::Data<PgPool>) -> Result<Vec<Note>, Error>{
-        query(r#"SELECT id, title, body, created_at, updated_at FROM notes"#)
+    pub async fn all(pool: web::Data<PgPool>, user_id: i32) -> Result<Vec<Note>, Error>{
+        query(r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE user_id = $1"#)
+            .bind(user_id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
                 title: row.get("title"),
@@ -48,9 +61,10 @@ impl Note{
             .await
     }
 
-    pub async fn get(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
-        query(r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id = $1"#)
+    pub async fn get(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Note, Error>{
+        query(r#"SELECT id, title, body, created_at, updated_at FROM notes WHERE id = $1 AND user_id = $2"#)
             .bind(id)
+            .bind(user_id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
                 title: row.get("title"),
@@ -62,16 +76,17 @@ impl Note{
             .await
     }
 
-    pub async fn new(pool: web::Data<PgPool>, note: NewNote) -> Result<Note, Error>{
+    pub async fn new(pool: web::Data<PgPool>, note: NewNote, user_id: i32) -> Result<Note, Error>{
         let title = note.title;
         let body = note.body.unwrap_or("".to_string());
         let created_at = Utc::now().naive_utc();
         let updated_at = Utc::now().naive_utc();
-        query(r#"INSERT INTO notes (title, body, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, title, body, created_at, updated_at;"#,)
+        query(r#"INSERT INTO notes (title, body, created_at, updated_at, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, title, body, created_at, updated_at;"#,)
             .bind(title)
             .bind(body)
             .bind(created_at)
             .bind(updated_at)
+            .bind(user_id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
                 title: row.get("title"),
