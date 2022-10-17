@@ -40,15 +40,50 @@ Content-Type: application/json
 }
 
 
-GET https://{{NOTISBAK_FQDN}}/
+POST http://{{NOTISBAK_FQDN}}/auth/register
+Content-Type: application/json
+
+{
+    "email": "{{EMAIL}}",
+    "password": "{{PASSWORD}}"
+}
+
+POST https://{{NOTISBAK_FQDN}}/auth/login
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+    "email": "{{EMAIL}}",
+    "password": "{{PASSWORD}}"
+}
+
+GET http://{{NOTISBAK_FQDN}}/auth/
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+GET https://{{NOTISBAK_FQDN}}/auth/validate
+Authorization: Bearer {{TOKEN}}
 
 GET https://{{NOTISBAK_FQDN}}/api-doc/openapi.json
 
 GET https://{{NOTISBAK_FQDN}}/swagger-ui/
 
-GET https://{{NOTISBAK_FQDN}}/notes
+GET https://{{NOTISBAK_FQDN}}/api/v1/
 
-POST https://{{NOTISBAK_FQDN}}/notes
+GET https://{{NOTISBAK_FQDN}}/api/v1/labels
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+POST https:/r{{NOTISBAK_FQDN}}/api/v1/labels
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+    "name": "Etiqueta 6"
+}
+
+POST https://{{NOTISBAK_FQDN}}/api/v1/notes
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
 {
@@ -56,6 +91,7 @@ Content-Type: application/json
 }
 
 PUT https://{{NOTISBAK_FQDN}}/notes
+Authorization: Bearer {{TOKEN}}
 Content-Type: application/json
 
 {
@@ -84,3 +120,8 @@ Content-Type: application/json
     "name": "Etiqueta 1"
 }
 
+//Notes
+
+GET https://{{NOTISBAK_FQDN}}/api/v1/notes
+Accept: application/json
+Authorization: Bearer {{TOKEN}}

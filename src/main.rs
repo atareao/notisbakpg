@@ -131,6 +131,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(
                 web::scope("api")
+                .wrap(auth.clone())
                 .service(routes::notes::root)
                 .service(routes::notes::create_note)
                 .service(routes::notes::read_note)

@@ -42,15 +42,10 @@ pub async fn create_label(pool: web::Data<PgPool>, body: String, credentials: Be
     let content: Value = serde_json::from_str(&body).unwrap();
     let name = content.get("name").as_ref().unwrap().as_str().unwrap();
     let user_id = Claims::get_index(credentials).unwrap();
-    match Label::new(&pool, name, user_id).await{
-        Ok(label) => {
-            match UserLabel::new(&pool, user_id, label.id).await{
-                Ok(_) => Ok(HttpResponse::Created().json(label)),
-                Err(_) => Err(ErrorNotFound("Not found")),
-            }
-        },
-        Err(_) => Err(ErrorNotFound("Not found")),
-    }
+    Label::new(&pool, name, user_id)
+        .await
+        .map(|label| HttpResponse::Ok().json(label))
+        .map_err(|_| ErrorNotFound("Not found"))
 }
 
 #[utoipa::path(

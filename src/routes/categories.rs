@@ -45,12 +45,13 @@ pub async fn read_category(pool: web::Data<PgPool>, path: web::Path<i32>, creden
 }
 
 #[utoipa::path(
+    context_path = "/api",
     responses(
         (status = 200, description = "List all categories", body = [Category])
     ),
     tag = "categories",
 )]
-#[get("/categories")]
+#[get("/v1/categories")]
 pub async fn read_categories(pool: web::Data<PgPool>, credentials: BearerAuth) -> Result<HttpResponse, Error>{
     let user_id = Claims::get_index(credentials).unwrap();
     Category::all(pool, user_id)
