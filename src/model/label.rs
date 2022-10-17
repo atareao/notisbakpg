@@ -56,9 +56,10 @@ impl Label{
             .await
     }
 
-    pub async fn get_labels_for_note(pool: web::Data<PgPool>, note_id: i32) -> Result<Vec<Label>, Error>{
-        query(r#"SELECT l.id, l.name FROM labels l INNER JOIN notes_labels nl ON nl.label_id = l.id AND note_id=$1"#)
+    pub async fn get_labels_for_note(pool: web::Data<PgPool>, note_id: i32, user_id: i32) -> Result<Vec<Label>, Error>{
+        query(r#"SELECT l.id, l.name FROM labels l INNER JOIN notes_labels nl ON nl.label_id = l.id AND note_id=$1 AND l.user_id = $2"#)
             .bind(note_id)
+            .bind(user_id)
             .map(|row: PgRow| Label{
                 id: row.get("id"),
                 name: row.get("name"),

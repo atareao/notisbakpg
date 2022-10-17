@@ -39,8 +39,9 @@ async fn main() -> std::io::Result<()> {
     println!("{}", &migrations.display());
 
 
+    //    #[openapi(modifiers(&SecurityAddon))]
+
     #[derive(OpenApi)]
-    #[openapi(modifiers(&SecurityAddon))]
     #[openapi(
         paths(
             routes::labels::create_label,
@@ -79,23 +80,23 @@ async fn main() -> std::io::Result<()> {
 
     struct SecurityAddon;
 
-    impl Modify for SecurityAddon{
-        fn modify(&self, openapi: & mut utoipa::openapi::OpenApi){
-            openapi.components = Some(
-                utoipa::openapi::ComponentsBuilder::new()
-                    .security_scheme(
-                        "api_jwt_token",
-                        SecurityScheme::Http(
-                            HttpBuilder::new()
-                                .scheme(HttpAuthScheme::Bearer)
-                                .bearer_format("JWT")
-                                .build(),
-                        ),
-                    )
-                    .build(),
-            )
-        }
-    }
+    //impl Modify for SecurityAddon{
+    //    fn modify(&self, openapi: & mut utoipa::openapi::OpenApi){
+    //        openapi.components = Some(
+    //            utoipa::openapi::ComponentsBuilder::new()
+    //                .security_scheme(
+    //                    "api_jwt_token",
+    //                    SecurityScheme::Http(
+    //                        HttpBuilder::new()
+    //                            .scheme(HttpAuthScheme::Bearer)
+    //                            .bearer_format("JWT")
+    //                            .build(),
+    //                    ),
+    //                )
+    //                .build(),
+    //        )
+    //    }
+    //}
 
     let pool = PgPoolOptions::new()
         .max_connections(4)

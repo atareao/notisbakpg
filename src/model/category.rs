@@ -90,9 +90,10 @@ impl Category{
             .await
     }
 
-    pub async fn get_categories_for_note(pool: web::Data<PgPool>, note_id: i32) -> Result<Vec<Category>, Error>{
-        query(r#"SELECT c.id, c.name FROM categories c INNER JOIN notes_categories nc ON nc.category_id = c.id AND note_id = $1"#)
+    pub async fn get_categories_for_note(pool: web::Data<PgPool>, note_id: i32, user_id: i32) -> Result<Vec<Category>, Error>{
+        query(r#"SELECT c.id, c.name FROM categories c INNER JOIN notes_categories nc ON nc.category_id = c.id AND note_id = $1 AND c.user_id = $2"#)
             .bind(note_id)
+            .bind(user_id)
             .map(|row: PgRow| Category{
                 id: row.get("id"),
                 name: row.get("name"),

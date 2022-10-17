@@ -98,25 +98,26 @@ impl Note{
             .await
     }
 
-    pub async fn update(pool: web::Data<PgPool>, content: Value) -> Result<Note, Error>{
+    pub async fn update(pool: web::Data<PgPool>, content: Value, user_id: i32) -> Result<Note, Error>{
         let updated_at = Utc::now().naive_utc();
         let id: i32 = content.get("id").as_ref().unwrap().as_i64().unwrap().try_into().unwrap();
         let title_option = content.get("title");
         let body_option = content.get("body");
         let mut sql = query("");
         if title_option != None && body_option != None{
-            sql = query(r#"UPDATE notes SET title = $1, body = $2, updated_at = $3 WHERE id = $4 RETURNING id, title, body, created_at, updated_at;"#)
+            sql = query(r#"UPDATE notes SET title = $1, body = $2, updated_at = $3 WHERE id = $4 AND user_id = $5 RETURNING id, title, body, created_at, updated_at;"#)
                 .bind(title_option.unwrap().as_str().unwrap())
                 .bind(body_option.unwrap().as_str().unwrap());
         }else if title_option != None{ 
-            sql = query(r#"UPDATE notes SET title = $1, updated_at = $2 WHERE id = $3 RETURNING id, title, body, created_at, updated_at;"#)
+            sql = query(r#"UPDATE notes SET title = $1, updated_at = $2 WHERE id = $3 AND user_id = $4 RETURNING id, title, body, created_at, updated_at;"#)
                 .bind(title_option.unwrap().as_str().unwrap())
         }else if body_option != None{
-            sql = query(r#"UPDATE notes SET body = $1, updated_at = $2 WHERE id = $3 RETURNING id, title, body, created_at, updated_at;"#)
+            sql = query(r#"UPDATE notes SET body = $1, updated_at = $2 WHERE id = $3 AND user_id = $4 RETURNING id, title, body, created_at, updated_at;"#)
                 .bind(body_option.unwrap().as_str().unwrap())
         }
         sql.bind(updated_at)
             .bind(id)
+            .bind(user_id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
                 title: row.get("title"),
@@ -128,9 +129,10 @@ impl Note{
             .await
     }
 
-    pub async fn delete(pool: web::Data<PgPool>, id: i32) -> Result<Note, Error>{
-        query(r#"DELETE FROM notes WHERE id = $1 RETURNING id, title, body, created_at, updated_at;"#)
+    pub async fn delete(pool: web::Data<PgPool>, id: i32, user_id: i32) -> Result<Note, Error>{
+        query(r#"DELETE FROM notes WHERE id = $1 AND user_id = $2 RETURNING id, title, body, created_at, updated_at;"#)
             .bind(id)
+            .bind(user_id)
             .map(|row: PgRow| Note{
                 id: row.get("id"),
                 title: row.get("title"),
