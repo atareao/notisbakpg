@@ -10,8 +10,8 @@ use crate::model::{category::{Category, NewCategory}, claims::Claims};
     request_body = NewCategory,
     responses(
         (status = 201, description = "Created successfully", body = Category),
-        (status = 401, description = "Error: Conflict"),
-        (status = 409, description = "Error: Unauthorized")
+        (status = 403, description = "Error: Unauthorized"),
+        (status = 409, description = "Error: Conflict"),
     ),
     tag = "categories",
 )]
@@ -37,7 +37,7 @@ pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCat
     responses(
         (status = 200, description = "Get One", body = Category),
         (status = 404, description = "Error: Not found"),
-        (status = 409, description = "Error: Unauthorized")
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -60,7 +60,7 @@ pub async fn read_category(pool: web::Data<PgPool>, path: web::Path<i32>, creden
     responses(
         (status = 200, description = "List all", body = [Category]),
         (status = 404, description = "Error: Not found"),
-        (status = 409, description = "Error: Unauthorized")
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -83,7 +83,7 @@ pub async fn read_categories(pool: web::Data<PgPool>, credentials: BearerAuth) -
     responses(
         (status = 201, description = "Updated successfully", body = Category),
         (status = 404, description = "Error: Not found"),
-        (status = 409, description = "Error: Unauthorized")
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -108,7 +108,7 @@ pub async fn update_category(pool: web::Data<PgPool>, category: web::Json<Catego
     responses(
         (status = 201, description = "Deleted successfully", body = Category),
         (status = 404, description = "Error: Not found"),
-        (status = 409, description = "Error: Unauthorized")
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
