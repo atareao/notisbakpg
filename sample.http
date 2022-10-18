@@ -1,44 +1,4 @@
-POST http://{{TEST_FQDN}}/auth/register
-Content-Type: application/json
-
-{
-    "email": "{{EMAIL}}",
-    "password": "{{PASSWORD}}"
-}
-
-POST http://{{TEST_FQDN}}/auth/login
-Authorization: Bearer {{TOKEN}}
-Content-Type: application/json
-
-{
-    "email": "{{EMAIL}}",
-    "password": "{{PASSWORD}}"
-}
-
-GET http://{{TEST_FQDN}}/auth/
-Accept: application/json
-Authorization: Bearer {{TOKEN}}
-
-GET http://{{TEST_FQDN}}/auth/validate
-Authorization: Bearer {{TOKEN}}
-
-GET http://{{TEST_FQDN}}/api/v1/notes
-Accept: application/json
-Authorization: Bearer {{TOKEN}}
-
-GET http://{{TEST_FQDN}}/api/v1/labels
-Accept: application/json
-Authorization: Bearer {{TOKEN}}
-
-
-POST http://{{TEST_FQDN}}/users/register
-Content-Type: application/json
-
-{
-    "email": "{{EMAIL}}",
-    "password": "{{PASSWORD}}"
-}
-
+/**** Registro y validación ****/
 
 POST http://{{NOTISBAK_FQDN}}/auth/register
 Content-Type: application/json
@@ -64,15 +24,25 @@ Authorization: Bearer {{TOKEN}}
 GET https://{{NOTISBAK_FQDN}}/auth/validate
 Authorization: Bearer {{TOKEN}}
 
+/**** Swagger ****/
+
 GET https://{{NOTISBAK_FQDN}}/api-doc/openapi.json
 
 GET https://{{NOTISBAK_FQDN}}/swagger-ui/
+
+/**** Test ****/
 
 GET https://{{NOTISBAK_FQDN}}/api/v1/
 Accept: application/json
 Authorization: Bearer {{TOKEN}}
 
+/**** Labels ****/
+
 GET https://{{NOTISBAK_FQDN}}/api/v1/labels
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+GET https://{{NOTISBAK_FQDN}}/api/v1/labels/1
 Accept: application/json
 Authorization: Bearer {{TOKEN}}
 
@@ -83,6 +53,32 @@ Content-Type: application/json
 {
     "name": "Etiqueta 6"
 }
+
+DELETE https://{{NOTISBAK_FQDN}}/api/v1/labels/1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+
+/**** CATEGORIES ****/
+
+GET https://{{NOTISBAK_FQDN}}/api/v1/categories
+Authorization: Bearer {{TOKEN}}
+
+GET https://{{NOTISBAK_FQDN}}/api/v1/categories/11
+Authorization: Bearer {{TOKEN}}
+
+POST https://{{NOTISBAK_FQDN}}/api/v1/categories
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+{
+    "name": "Categoria 4"
+}
+
+DELETE https://{{NOTISBAK_FQDN}}/api/v1/categories/13
+Authorization: Bearer {{TOKEN}}
+
+/**** NOTES ****/
 
 GET https://{{NOTISBAK_FQDN}}/api/v1/notes
 Authorization: Bearer {{TOKEN}}
@@ -106,37 +102,6 @@ Content-Type: application/json
 }
 
 DELETE https://{{NOTISBAK_FQDN}}/notes/5
-
-/**** CATEGORIES ****/
-
-GET https://{{NOTISBAK_FQDN}}/api/v1/categories
-Authorization: Bearer {{TOKEN}}
-
-GET https://{{NOTISBAK_FQDN}}/api/v1/categories/11
-Authorization: Bearer {{TOKEN}}
-
-POST https://{{NOTISBAK_FQDN}}/api/v1/categories
-Authorization: Bearer {{TOKEN}}
-Content-Type: application/json
-
-{
-    "name": "Categoria 4"
-}
-
-DELETE https://{{NOTISBAK_FQDN}}/api/v1/categories/13
-Authorization: Bearer {{TOKEN}}
-
-GET https://{{NOTISBAK_FQDN}}/labels
-
-POST https://{{NOTISBAK_FQDN}}/labels
-Content-Type: application/json
-
-{
-    "name": "Etiqueta 1"
-}
-
-//Notes
-
 GET https://{{NOTISBAK_FQDN}}/api/v1/notes
 Accept: application/json
 Authorization: Bearer {{TOKEN}}
