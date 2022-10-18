@@ -22,7 +22,7 @@ pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCat
             let name = category.into_inner().name;
             Category::new(pool, &name, user_id)
                 .await
-                .map(|category| HttpResponse::Ok().json(category))
+                .map(|item| HttpResponse::Ok().json(item))
                 .map_err(|e| ErrorConflict(e))
         },
         Err(e) => Err(ErrorUnauthorized(e)),
@@ -93,7 +93,7 @@ pub async fn update_category(pool: web::Data<PgPool>, category: web::Json<Catego
         Ok(_user_id) => {
             Category::update(pool, category.into_inner())
                .await
-               .map(|category| HttpResponse::Ok().json(category))
+               .map(|item| HttpResponse::Ok().json(item))
                .map_err(|e| ErrorConflict(e))
         },
         Err(e) => Err(ErrorUnauthorized(e)),
@@ -119,7 +119,7 @@ pub async fn delete_category(pool: web::Data<PgPool>, path: web::Path<i32>, cred
             let id = path.into_inner();
             Category::delete(pool, id)
                .await
-               .map(|category| HttpResponse::Ok().json(category))
+               .map(|item| HttpResponse::Ok().json(item))
                .map_err(|e| ErrorNotFound(e))
         },
         Err(e) => Err(ErrorUnauthorized(e)),
