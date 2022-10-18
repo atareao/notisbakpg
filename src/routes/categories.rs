@@ -1,5 +1,5 @@
-use actix_web::{get, post, put, delete, web, error::ErrorNotFound, Error,
-                HttpResponse};
+use actix_web::{get, post, put, delete, web, error::{ErrorNotFound,
+    ErrorConflict, ErrorUnauthorized}, Error, HttpResponse};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use anyhow::Result;
 use sqlx::PgPool;
@@ -23,9 +23,9 @@ pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCat
             Category::new(pool, &name, user_id)
                 .await
                 .map(|category| HttpResponse::Ok().json(category))
-                .map_err(|e| actix_web::error::ErrorConflict(e))
+                .map_err(|e| ErrorConflict(e))
         },
-        Err(e) => Err(actix_web::error::ErrorUnauthorized(e)),
+        Err(e) => Err(ErrorUnauthorized(e)),
     }
 }
 
@@ -48,10 +48,10 @@ pub async fn read_category(pool: web::Data<PgPool>, path: web::Path<i32>, creden
             let id = path.into_inner();
             Category::get(pool, id, user_id)
                 .await
-                .map(|category| HttpResponse::Ok().json(category))
-                .map_err(|e| actix_web::error::ErrorNotFound(e))
+                .map(|item| HttpResponse::Ok().json(item))
+                .map_err(|e| ErrorNotFound(e))
         },
-        Err(e) => Err(actix_web::error::ErrorUnauthorized(e)),
+        Err(e) => Err(ErrorUnauthorized(e)),
     }
 }
 
@@ -70,10 +70,10 @@ pub async fn read_categories(pool: web::Data<PgPool>, credentials: BearerAuth) -
         Ok(user_id) => {
             Category::all(pool, user_id)
                .await
-               .map(|some_categories| HttpResponse::Ok().json(some_categories))
-               .map_err(|e| actix_web::error::ErrorNotFound(e))
+               .map(|items| HttpResponse::Ok().json(items))
+               .map_err(|e| ErrorNotFound(e))
         },
-        Err(e) => Err(actix_web::error::ErrorUnauthorized(e)),
+        Err(e) => Err(ErrorUnauthorized(e)),
     }
 }
 
@@ -94,9 +94,9 @@ pub async fn update_category(pool: web::Data<PgPool>, category: web::Json<Catego
             Category::update(pool, category.into_inner())
                .await
                .map(|category| HttpResponse::Ok().json(category))
-               .map_err(|e| actix_web::error::ErrorConflict(e))
+               .map_err(|e| ErrorConflict(e))
         },
-        Err(e) => Err(actix_web::error::ErrorUnauthorized(e)),
+        Err(e) => Err(ErrorUnauthorized(e)),
     }
 }
 
@@ -122,6 +122,6 @@ pub async fn delete_category(pool: web::Data<PgPool>, path: web::Path<i32>, cred
                .map(|category| HttpResponse::Ok().json(category))
                .map_err(|e| ErrorNotFound(e))
         },
-        Err(e) => Err(actix_web::error::ErrorUnauthorized(e)),
+        Err(e) => Err(ErrorUnauthorized(e)),
     }
 }
