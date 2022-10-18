@@ -9,7 +9,9 @@ use crate::model::{category::{Category, NewCategory}, claims::Claims};
     context_path = "/api",
     request_body = NewCategory,
     responses(
-        (status = 201, description = "Category created successfully", body = Category),
+        (status = 201, description = "Created successfully", body = Category),
+        (status = 401, description = "Error: Conflict"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -33,8 +35,9 @@ pub async fn create_category(pool: web::Data<PgPool>, category: web::Json<NewCat
         ("id", description = "The id of the category"),
     ),
     responses(
-        (status = 200, description = "The category fot this id", body = Category),
-        (status = 404, description = "Category not found", body = Category),
+        (status = 200, description = "Get One", body = Category),
+        (status = 404, description = "Error: Not found"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -55,7 +58,9 @@ pub async fn read_category(pool: web::Data<PgPool>, path: web::Path<i32>, creden
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "List all categories", body = [Category])
+        (status = 200, description = "List all", body = [Category]),
+        (status = 404, description = "Error: Not found"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -76,8 +81,9 @@ pub async fn read_categories(pool: web::Data<PgPool>, credentials: BearerAuth) -
     context_path = "/api",
     request_body = Category,
     responses(
-        (status = 201, description = "Category updated successfully", body = Category),
-        (status = 404, description = "Category not found", body = Category),
+        (status = 201, description = "Updated successfully", body = Category),
+        (status = 404, description = "Error: Not found"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
@@ -100,7 +106,9 @@ pub async fn update_category(pool: web::Data<PgPool>, category: web::Json<Catego
         ("id", description = "The id of the category"),
     ),
     responses(
-        (status = 201, description = "Category deleted successfully", body = Category),
+        (status = 201, description = "Deleted successfully", body = Category),
+        (status = 404, description = "Error: Not found"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "categories",
 )]
