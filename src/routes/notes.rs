@@ -1,30 +1,16 @@
-use actix_web::{get, post, put, delete, web,
-                error::{ErrorNotFound, ErrorBadRequest}, Error, HttpResponse,
-                HttpRequest, http::StatusCode, test::{self, TestRequest}, App};
+use actix_web::{get, post, put, delete, web, error::{ErrorNotFound,
+    ErrorConflict, ErrorUnauthorized, ErrorBadRequest}, Error, HttpResponse};
+use actix_web::{App, test};
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use anyhow::Result;
 use sqlx::PgPool;
 use crate::model::{note::{Note, NewNote}, category::Category,
-    note_label::NoteLabel, note_category::NoteCategory, label::{Label, 
-        NewLabel}, claims::Claims, user::Credentials};
+    note_label::NoteLabel, note_category::NoteCategory, label::Label, claims::Claims};
 use serde_json::Value;
-use serde::{Serialize, Deserialize};
-use utoipa::ToSchema;
-
-/// Todo endpoint error responses
-#[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]
-pub(super) enum ErrorResponse {
-    /// When Todo is not found by search term.
-    NotFound(String),
-    /// When there is a conflict storing a new todo.
-    Conflict(String),
-    /// When todo enpoint was called without correct credentials
-    Unauthorized(String),
-}
 
 #[get("/v1/")]
 pub async fn root() -> Result<HttpResponse, Error>{
-    Ok(HttpResponse::build(StatusCode::OK).body("Hello world, Rust!"))
+    Ok(HttpResponse::Ok().body("Hello world, Rust!"))
 }
 
 #[actix_web::test]
@@ -45,18 +31,23 @@ async fn test_index() {
     context_path = "/api",
     request_body = NewNote,
     responses(
-        (status = 201, description = "Note created successfully", body = Note),
+        (status = 201, description = "Created successfully", body = NewNote),
+        (status = 401, description = "Error: Conflict"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "notes"
 )]
 #[post("/v1/notes")]
-pub async fn create_note(pool: web::Data<PgPool>, note: web::Json<NewNote>,
-        credentials: BearerAuth) -> Result<HttpResponse, Error>{
-    let user_id = Claims::get_index(credentials).unwrap();
-    Note::new(pool, note.into_inner(), user_id)
-       .await
-       .map(|note| HttpResponse::Created().json(note))
-       .map_err(|_| ErrorNotFound("Not found"))
+pub async fn create_note(pool: web::Data<PgPool>, note: web::Json<NewNote>, credentials: BearerAuth) -> Result<HttpResponse, Error>{
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            Note::new(pool, note.into_inner(), user_id)
+               .await
+               .map(|item| HttpResponse::Created().json(item))
+               .map_err(|e| ErrorNotFound("Not found"))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 #[utoipa::path(
@@ -65,37 +56,46 @@ pub async fn create_note(pool: web::Data<PgPool>, note: web::Json<NewNote>,
         ("id", description = "The id of the note"),
     ),
     responses(
-        (status = 200, description = "The note for this id", body = Note),
-        (status = 404, description = "Note not found"),
+        (status = 200, description = "Get One", body = Note),
+        (status = 404, description = "Error: Not found"),
+        (status = 409, description = "Error: Unauthorized")
     ),
     tag = "notes"
 )]
 #[get("/v1/notes/{id}")]
-pub async fn read_note(req: HttpRequest, pool: web::Data<PgPool>,
-        path: web::Path<i32>, credentials: BearerAuth)->Result<HttpResponse, Error>{
-    let id = path.into_inner();
-    let user_id = Claims::get_index(credentials).unwrap();
-    Note::get(pool, id, user_id)
-       .await
-       .map(|note| HttpResponse::Ok().json(note))
-       .map_err(|_| ErrorNotFound("Not found"))
+pub async fn read_note(pool: web::Data<PgPool>, path: web::Path<i32>, credentials: BearerAuth)->Result<HttpResponse, Error>{
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            let id = path.into_inner();
+            Note::get(pool, id, user_id)
+               .await
+               .map(|item| HttpResponse::Ok().json(item))
+               .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 #[utoipa::path(
     context_path = "/api",
     responses(
-        (status = 200, description = "List all notes", body = [Note])
+        (status = 200, description = "List all", body = [Note]),
+        (status = 404, description = "Error: Not found"),
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "notes"
 )]
 #[get("/v1/notes")]
-pub async fn read_notes(req: HttpRequest, pool: web::Data<PgPool>,
-        credentials: BearerAuth)->Result<HttpResponse, Error>{
-    let user_id = Claims::get_index(credentials).unwrap();
-    Note::all(pool, user_id)
-        .await
-        .map(|some_notes| HttpResponse::Ok().json(some_notes))
-        .map_err(|_| ErrorBadRequest("Not found"))
+pub async fn read_notes(pool: web::Data<PgPool>, credentials: BearerAuth)->Result<HttpResponse, Error>{
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            Note::all(pool, user_id)
+                .await
+                .map(|some_notes| HttpResponse::Ok().json(some_notes))
+                .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 
@@ -105,19 +105,25 @@ pub async fn read_notes(req: HttpRequest, pool: web::Data<PgPool>,
         ("id", description = "The id of the note"),
     ),
     responses(
-        (status = 200, description = "List all labels por a note", body = [Category])
+        (status = 200, description = "All categories for note", body = [Category]),
+        (status = 404, description = "Error: Not found"),
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "notes"
 )]
 #[get("/v1/notes/{id}/categories/")]
 pub async fn read_categories_for_note(pool: web::Data<PgPool>,
         path: web::Path<i32>, credentials: BearerAuth)->Result<HttpResponse, Error>{
-    let id = path.into_inner();
-    let user_id = Claims::get_index(credentials).unwrap();
-    Category::get_categories_for_note(pool, id, user_id)
-       .await
-       .map(|categories| HttpResponse::Ok().json(categories))
-       .map_err(|_| ErrorNotFound("Not found"))
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            let id = path.into_inner();
+            Category::get_categories_for_note(pool, id, user_id)
+               .await
+               .map(|items| HttpResponse::Ok().json(items))
+               .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 #[utoipa::path(
@@ -126,19 +132,25 @@ pub async fn read_categories_for_note(pool: web::Data<PgPool>,
         ("id", description = "The id of the note"),
     ),
     responses(
-        (status = 200, description = "List all labels por a note", body = [Label])
+        (status = 200, description = "All labels for ntoe", body = [Label]),
+        (status = 404, description = "Error: Not found"),
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "notes"
 )]
 #[get("/v1/notes/{id}/labels/")]
 pub async fn read_labels_for_note(pool: web::Data<PgPool>,
         path: web::Path<i32>, credentials: BearerAuth)->Result<HttpResponse, Error>{
-    let id = path.into_inner();
-    let user_id = Claims::get_index(credentials).unwrap();
-    Label::get_labels_for_note(pool, id, user_id)
-       .await
-       .map(|labels| HttpResponse::Ok().json(labels))
-       .map_err(|_| ErrorNotFound("Not found"))
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            let id = path.into_inner();
+            Label::get_labels_for_note(pool, id, user_id)
+               .await
+               .map(|labels| HttpResponse::Ok().json(labels))
+               .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 
@@ -146,20 +158,24 @@ pub async fn read_labels_for_note(pool: web::Data<PgPool>,
     context_path = "/api",
     request_body = Note,
     responses(
-        (status = 201, description = "Note updated successfully", body = Note),
-        (status = 404, description = "Note not found", body = Note),
+        (status = 200, description = "Updated successfully", body = Note),
+        (status = 404, description = "Error: Not found"),
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "notes",
 )]
 #[put("/v1/notes")]
-pub async fn update_note(pool: web::Data<PgPool>, post: String,
-        credentials: BearerAuth) -> Result<HttpResponse, Error>{
-    let content: Value = serde_json::from_str(&post).unwrap();
-    let user_id = Claims::get_index(credentials).unwrap();
-    Note::update(pool, content, user_id)
-       .await
-       .map(|note| HttpResponse::Ok().json(note))
-       .map_err(|_| ErrorNotFound("Not found"))
+pub async fn update_note(pool: web::Data<PgPool>, post: String, credentials: BearerAuth) -> Result<HttpResponse, Error>{
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            let content: Value = serde_json::from_str(&post).unwrap();
+            Note::update(pool, content, user_id)
+               .await
+               .map(|note| HttpResponse::Ok().json(note))
+               .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 #[utoipa::path(
@@ -168,19 +184,25 @@ pub async fn update_note(pool: web::Data<PgPool>, post: String,
         ("id", description = "The id of the note"),
     ),
     responses(
-        (status = 201, description = "Deleted note", body = Note),
+        (status = 200, description = "Deleted successfully", body = Label),
+        (status = 404, description = "Error: Not found"),
+        (status = 403, description = "Error: Unauthorized")
     ),
     tag = "notes",
 )]
 #[delete("/v1/notes/{id}")]
 pub async fn delete_note(pool: web::Data<PgPool>,
         path: web::Path<i32>, credentials: BearerAuth)->Result<HttpResponse, Error>{
-    let id = path.into_inner();
-    let user_id = Claims::get_index(credentials).unwrap();
-    Note::delete(pool, id, user_id)
-       .await
-       .map(|note| HttpResponse::Ok().json(note))
-       .map_err(|_| ErrorNotFound("Not found"))
+    match Claims::get_index(credentials) {
+        Ok(user_id) => {
+            let id = path.into_inner();
+            Note::delete(pool, id, user_id)
+               .await
+               .map(|note| HttpResponse::Ok().json(note))
+               .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 
@@ -198,13 +220,18 @@ pub async fn delete_note(pool: web::Data<PgPool>,
 )]
 #[put("/v1/notes/{note_id}/labels/{label_id}")]
 pub async fn add_label_to_note(pool: web::Data<PgPool>,
-        path: web::Path<(i32, i32)>)->Result<HttpResponse, Error>{
-    let note_id = path.0;
-    let label_id = path.1;
-    NoteLabel::new(pool, note_id, label_id)
-        .await
-        .map(|note_label| HttpResponse::Ok().json(note_label))
-        .map_err(|_| ErrorBadRequest("Bad Request"))
+        path: web::Path<(i32, i32)>, credentials: BearerAuth)->Result<HttpResponse, Error>{
+    match Claims::get_index(credentials) {
+        Ok(_user_id) => {
+            let note_id = path.0;
+            let label_id = path.1;
+            NoteLabel::new(pool, note_id, label_id)
+                .await
+                .map(|note_label| HttpResponse::Ok().json(note_label))
+                .map_err(|e| ErrorNotFound(e))
+        },
+        Err(e) => Err(ErrorUnauthorized(e)),
+    }
 }
 
 /// Remove a label from note by ids
@@ -228,11 +255,10 @@ pub async fn delete_label_from_note(pool: web::Data<PgPool>,
         path: web::Path<(i32, i32)>, credentials: BearerAuth)->Result<HttpResponse, Error>{
     let note_id = path.0;
     let label_id = path.1;
-    let user_id = Claims::get_index(credentials).unwrap();
     NoteLabel::delete(pool, note_id, label_id)
         .await
         .map(|note_label| HttpResponse::Ok().json(note_label))
-        .map_err(|_| ErrorBadRequest("Bad Request"))
+        .map_err(|e| ErrorBadRequest(e))
 }
 
 #[utoipa::path(
