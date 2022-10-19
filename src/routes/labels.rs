@@ -3,7 +3,7 @@ use actix_web::{get, post, put, delete, web, error::{ErrorNotFound,
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::model::{label::Label, claims::Claims, user_label::UserLabel};
+use crate::model::{label::Label, claims::Claims};
 use serde_json::Value;
 
 #[utoipa::path(
@@ -109,7 +109,7 @@ pub async fn update_label(pool: web::Data<PgPool>, label: web::Json<Label>, cred
         ("id", description = "The id of the label"),
     ),
     responses(
-        (status = 201, description = "Deleted successfully", body = Label),
+        (status = 200, description = "Deleted successfully", body = Label),
         (status = 404, description = "Error: Not found"),
         (status = 403, description = "Error: Unauthorized")
     ),
